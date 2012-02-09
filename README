@@ -1,6 +1,6 @@
 # About #
 
-Mutate is a file transcoding abstraction library.  It provides a common interface for tools which transcode files from one format to another.  Several tools (and common presets that use them) are provided with the library, but others can be registered or defined on the fly from your own code.
+Mutate is a file transcoding tool abstraction library.  It provides a common interface for tools which transcode files from one format to another.  Several tools (and common presets that use them) are provided with the library, but others can be registered or defined on the fly from your own code.
 
 # Installation #
 
@@ -11,7 +11,7 @@ On the other hand, if you want to use Mutate as a stand-alone app for transcodin
 	# go to Mutate root
 	$> cd /path/to/mutate_root
 	
-	$> bin/install
+	$> php bin/install
 
 If that didn't work, try running Composer manually:
 
@@ -25,7 +25,7 @@ If that didn't work, try running Composer manually:
 	
 You can see if the installation worked by running the following:
 
-	bin/mutate
+	php bin/mutate
 	
 If the install worked, you will see a list of available commands.  If not, probably errors. :)
 
@@ -38,13 +38,13 @@ To use a script to simply transcode a file from one format to another, given a p
 	$> cd /path/to/mutate_root
 
 	# convert image format
-	$> bin/mutate transcode /path/to/test/file.jpg image_to_gif /path/to/output/file.gif
+	$> php bin/mutate transcode /path/to/test/file.jpg image_to_gif /path/to/output/file.gif
 	
 	# convert video (if the output file path is not provided, mutate will automatically choose a filename for you in the same directory)
-	$> bin/mutate transcode /path/to/test/file.wmv mp4_720
+	$> php bin/mutate transcode /path/to/test/file.wmv mp4_720
 	
 	# run a transcode job
-	$> bin/mutate transcode:job /path/to/test/file.m4a job_name
+	$> php bin/mutate transcode:job /path/to/test/file.m4a job_name
 
 # Implementation Details & Example Usage #
 
@@ -66,10 +66,12 @@ Using the transcoder by its self is simple, as it has no dependencies.  It can a
 	$newFile = $transcoder->transcode($inputFilePath, $nameOfPreset, $outputFilePath);
 	
 	//transcode a file with a specific adaptor and options
-	$newFile = $transcoder->transcodeWithAdapter($inputFilePath, $)
+	$newFile = $transcoder->transcodeWithAdapter($inputFilePath, $adapterName, array(
+		/* options */
+	));
 	
 	//transcode one file using a job (could result in many files depending on the job definition), returns an array of files (only one entry if only one file was created)
-	$files = $transcoder->runJob($inputFilePath, $nameOfJob);
+	$files = $transcoder->transcodeWithJob($inputFilePath, $nameOfJob);
 	
 	
 ## Adapters ##
@@ -164,9 +166,11 @@ We will keep track of where we are, and where we're headed, in the development p
 
 Todo list:
 
+* Finalize Preset
 * Flesh out File object
-* Unit tests in `/tests` with PHPUnit
-* add batch commands, which take directory
+* Finish Transcoder
+* Unit tests in `/tests` for above 3 with PHPUnit
+* add batch commands, which take directory/patterns
 * Implement job definitions
 	* Allow chained presets on an output file
 	* Allow creation of multiple output files
