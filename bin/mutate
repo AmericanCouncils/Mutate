@@ -6,7 +6,7 @@ require(__DIR__."/../vendor/.composer/autoload.php");
 
 $application = new Application;
 
-//register adapters
+//register user-added adapters
 $path = __DIR__."/../adapters/";
 foreach(scandir($path) as $item) {
 	if('.php' === substr($item, 0, -4)) {
@@ -17,7 +17,7 @@ foreach(scandir($path) as $item) {
 	}
 }
 
-//register presets
+//register user-added presets
 $path = __DIR__."/../presets/";
 foreach(scandir($path) as $item) {
 	if('.php' === substr($item, 0, -4)) {
@@ -28,7 +28,7 @@ foreach(scandir($path) as $item) {
 	}
 }
 
-//register jobs
+//register user-added jobs
 $path = __DIR__."/../jobs/";
 foreach(scandir($path) as $item) {
 	if('.php' === substr($item, 0, -4)) {
