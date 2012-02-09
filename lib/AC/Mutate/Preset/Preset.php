@@ -1,31 +1,45 @@
 <?php
 
-namespace AC\Mutate;
+namespace AC\Mutate\Preset;
 
 class Preset implements \ArrayAccess, \Serializable, \IteratorAggregate {
 	protected $name = false;
 	protected $description = false;
 	protected $requiredAdapter = false;
 	protected $locked = false;
-	protected $settings = array();
+	
+	
+	/**
+	 * Options are values specific to the adapter required by the prefix.
+	 *
+	 * @var array
+	 */
 	protected $options = array();
 	
-	public function __construct($name, $adapter, $settings = array(), $options = array()) {
-		$this->name = $name;
-		$this->requiredAdapter = $adapter;
+	public function __construct($name = false, $adapter = false, $options = array(), PresetDefinition $def = null) {
+		if(!$this->name) {
+			$this->name = $name;
+		}
+		if(!$this->adapter) {
+			$this->requiredAdapter = $adapter;
+		}
+
 		$this->options = $options;
+
+		$this->definition = ($def) ? $def : $this->buildDefinition();
+
+		$this->configure();
 	}
 	
-	public function getRequiredAdapter() {
-		return $this->requiredAdapter;
+	protected function configure() {
 	}
 	
-	public function allowsDirectories() {
-		return (isset($this->settings['allowDirectories']) && true === $this->settings['allowDirectories']);
+	protected function buildDefinition() {
+		return new PresetDefinition;
 	}
 	
-	public function getAllowedExtensions() {
-		
+	public function getDefinition() {
+		return $this->definition;
 	}
 	
 	protected function setOptions(array $ops) {

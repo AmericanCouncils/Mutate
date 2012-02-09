@@ -7,9 +7,9 @@ class Transcoder {
 	protected $presets = array();
 	protected $jobs = array();
 
-	public function transcodeWithAdapter($inFile, $adapterName, $outFile, $options = array()) {
+	public function transcodeWithAdapter($inFile, $adapterName, $outFile, $options = array(), $settings = array()) {
 		//build a preset on the fly based on the options provided
-		$preset = new Preset('dynamic', $adapterName, $options);
+		$preset = new Preset('dynamic', $adapterName, $options, $settings);
 		return $this->transcodeWithPreset($inFile, $preset, $outFile);
 	}
 	
@@ -29,32 +29,31 @@ class Transcoder {
 			throw new Exception\FileNotFoundException(sprintf("Input file %s could not be found.", $inFile->getFilename()));
 		}
 
-		//check for directory input
-		if($inFile->isDir() && !$preset->allowsDirectoryInput()) {
-			throw new Exception\InvalidInputException(sprintf("Preset %s does not allow directory input, you must specify a file.", $preset->getName()));
+		//validate preset definition against input
+		$def = $preset->getDefinition();
+		$this->validatePresetDefinitionWithInput($inFile, $def);
+
+		//validate adapter against preset
+		$adapter = $this->getAdapter($def->getRequiredAdapter());
+		$this->validateAdapterWithInputAndDefinition($inFile, $def, $adapter);
+			
+		//resolve output format
+		$outFile = $this->resolveOutputFormat($def, $adapter, $outFile);
+		if(!is_string($outFile)) {
+			throw new Exception\InvalidOutputException(sprintf("Transcoder must be able to determine a string output format to pass to adapter."));
 		}
 		
-		//figure out output file path
-		if(!$outFile) {
-			//check if the preset allows directory output
-			if($preset->hasDirectoryOutput()) {
-				
-			} else {
-				
-			}
-		}
+		//validate adapter against intended output
+		$this->validateAdapterWithOutput($adapter, new File($outFile));
 		
-		//check output path
-		$outPath = is_dir($outFile) ? $outFile : dirname($outFile);
-		if(!is_writable($path)) {
-			throw new Exception\FilePermissionException(sprintf("The output location (%s) is not writable by this process.", $path));
+		//check for incoming file extension restriction
+		$restrictions = $preset->getExtensionRestrictions();
+		if(!empty($restrictions) && !in_array(strtolower($inFile->getExtension()), $restrictions)) {
+			throw new Exception\InvalidInputException(sprintf("Preset %s will not except files with extension %s", $preset->getName(), $inFile->getExtension()));
 		}
-		
-		//get the adapter specified by the preset
-		$adapter = $this->getAdapter($preset->getRequiredAdapter());
 
 		//run the transcode
-		$return = $adapter->transcodeFile($inFile, $preset, $outFile);
+		$return = $adapter->transcodeFile($inFile, $outFile, $preset);
 		
 		//enforce proper return format
 		if(!$return instanceof File) {
@@ -62,6 +61,31 @@ class Transcoder {
 		}
 		
 		return $return;
+	}
+	
+	protected function resolveOutputFormat(PresetDefinition $def, Adapter $adapter, $outFile = false) {
+		//check output path
+		$outPath = is_dir($outFile) ? $outFile : dirname($outFile);
+		if(!is_writable($path)) {
+			throw new Exception\FilePermissionException(sprintf("The output location (%s) is not writable by this process.", $path));
+		}
+		
+		return $string;
+	}
+	
+	protected function validateAdapterWithInputAndDefinition(File $file, PresetDefinition $def, Adapter $adapter) {
+	
+	}
+	
+	protected function validateAdapterWithOutput(Adapter $adapter, File $outFile) {
+		//mostly directory checking, check write permissions
+	}
+	
+	protected function validatePresetDefinitionWithInput(File $file, PresetDefinition $def) {
+		if($inFile->isDir() && !$def->allowsDirectoryInput()) {
+			throw new Exception\InvalidInputException(sprintf("Preset %s does not allow directory input, you must specify a file.", $preset->getName()));
+		}
+		
 	}
 		
 	public function transcodeWithJob($inFile, $job, $outFile = false) {
@@ -149,7 +173,7 @@ class Transcoder {
 	
 	public function removeJob($name) {
 		if(isset($this->jobs[$name])) {
-			return unset($this->jobs[$name]);
+			unset($this->jobs[$name]);
 		}
 
 		return $this;

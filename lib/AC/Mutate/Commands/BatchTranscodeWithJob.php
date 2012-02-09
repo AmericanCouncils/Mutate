@@ -8,9 +8,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\Output;
 
-class BatchConvertWithPreset extends Command {
-	protected $name = "transcode:batch";
-	protected $description = "Convert files in directory with a preset, optionally specify pattern to match against files.";
+class BatchTranscodeWithJob extends Command {
+	protected $name = "transcode:batch:job";
+	protected $description = "Convert files in directory with a job, optionally specify pattern to match against files.";
 	
 	protected function onConfigure() {
 		

@@ -167,9 +167,11 @@ We will keep track of where we are, and where we're headed, in the development p
 Todo list:
 
 * Finalize Preset
+* Finalize PresetDefinition
 * Flesh out File object
+* Flesh out Adapter
 * Finish Transcoder
-* Unit tests in `/tests` for above 3 with PHPUnit
+* Unit tests in `/tests` for above objects with PHPUnit
 * add batch commands, which take directory/patterns
 * Implement job definitions
 	* Allow chained presets on an output file
