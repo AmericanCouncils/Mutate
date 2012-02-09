@@ -1,0 +1,43 @@
+#!/usr/bin/env php
+<?php
+use \AC\Mutate\Application\Application;
+
+require(__DIR__."/../vendor/.composer/autoload.php");
+
+$application = new Application;
+
+//register adapters
+$path = __DIR__."/../adapters/";
+foreach(scandir($path) as $item) {
+	if('.php' === substr($item, 0, -4)) {
+		if(@include_once($path.$item)) {
+			$class = substr($item, 0, -4); //get rid of ".php"
+			$application->getTranscoder()->registerAdapter(new $class);
+		}
+	}
+}
+
+//register presets
+$path = __DIR__."/../presets/";
+foreach(scandir($path) as $item) {
+	if('.php' === substr($item, 0, -4)) {
+		if(@include_once($path.$item)) {
+			$class = substr($item, 0, -4); //get rid of ".php"
+			$application->getTranscoder()->registerPreset(new $class);
+		}
+	}
+}
+
+//register jobs
+$path = __DIR__."/../jobs/";
+foreach(scandir($path) as $item) {
+	if('.php' === substr($item, 0, -4)) {
+		if(@include_once($path.$item)) {
+			$class = substr($item, 0, -4); //get rid of ".php"
+			$application->getTranscoder()->registerJob(new $class);
+		}
+	}
+}
+
+//run the application
+$application->run();

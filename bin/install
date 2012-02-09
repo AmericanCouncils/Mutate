@@ -1,0 +1,15 @@
+#!/usr/bin/env php
+<?php
+
+//chdir to root
+$root = __DIR__."/..";
+chdir($root);
+
+//exit if already installed
+if(file_exists($root."/composer.lock") && !in_array('--reinstall', $argv)) {
+	exit(PHP_EOL.PHP_EOL."Mutate is already installed.  Use the '--reinstall' option to force reinstall.".PHP_EOL.PHP_EOL);
+}
+
+//run the install
+passthru("curl -O http://getcomposer.org/composer.phar");
+passthru("php composer.phar install");

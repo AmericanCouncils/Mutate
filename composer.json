@@ -1,0 +1,27 @@
+{
+    "name": "ac/mutate",
+    "type": "library",
+    "description": "File transcoding library.",
+    "keywords": ["file","convert", "transcode"],
+    "homepage": "http://github.com/americancouncils/mutate",
+    "version": "1.0.0 dev",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Evan Villemez",
+            "email": "evan.villemez@americancouncils.org"
+        },
+        {
+            "name": "Jay Hebert"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2",
+		"symfony/console": "2.*",
+		"symfony/process": "2.*",
+		"symfony/class-loader": "2.*"
+    },
+    "autoload": {
+        "psr-0": { "AC\\Mutate": "lib/" }
+    }
+}
