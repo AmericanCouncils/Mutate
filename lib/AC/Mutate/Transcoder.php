@@ -2,18 +2,21 @@
 
 namespace AC\Mutate;
 
+use \AC\Mutate\Preset\Preset;
+use \AC\Mutate\Preset\PresetDefinition;
+
 class Transcoder {
 	protected $adapters = array();
 	protected $presets = array();
 	protected $jobs = array();
 
-	public function transcodeWithAdapter($inFile, $adapterName, $outFile, $options = array(), $settings = array()) {
+	public function transcodeWithAdapter($inFile, $adapterName, $outFile, $options = array(), $defSettings = array()) {
 		//build a preset on the fly based on the options provided
-		$preset = new Preset('dynamic', $adapterName, $options, $settings);
+		$preset = new Preset('dynamic', $adapterName, $options, new PresetDefinition($defSettings));
 		return $this->transcodeWithPreset($inFile, $preset, $outFile);
 	}
 	
-	public function transcodeWithPreset($inFile, $preset, $outFile = false) {
+	public function transcodeWithPreset($inFile, $preset, $outFile = false, $overwrite = false) {
 		//get preset
 		if(!$preset instanceof Preset) {
 			$preset = $this->getPreset($preset);
@@ -28,24 +31,25 @@ class Transcoder {
 		if(!$inFile->exists()) {
 			throw new Exception\FileNotFoundException(sprintf("Input file %s could not be found.", $inFile->getFilename()));
 		}
-
-		//validate preset definition against input
-		$def = $preset->getDefinition();
-		$this->validatePresetDefinitionWithInput($inFile, $def);
-
-		//validate adapter against preset
-		$adapter = $this->getAdapter($def->getRequiredAdapter());
-		$this->validateAdapterWithInputAndDefinition($inFile, $def, $adapter);
-			
-		//resolve output format
-		$outFile = $this->resolveOutputFormat($def, $adapter, $outFile);
-		if(!is_string($outFile)) {
-			throw new Exception\InvalidOutputException(sprintf("Transcoder must be able to determine a string output format to pass to adapter."));
-		}
 		
-		//validate adapter against intended output
-		$this->validateAdapterWithOutput($adapter, new File($outFile));
+		//have preset validate file
+		$preset->getDefinition()->validateInputFile($inFile);
+
+		//get adapter
+		$adapter = $this->getAdapter($preset->getAdapter());
 		
+		//have adapter validate file
+		$adapter->validateInputFile($inFile);
+		
+		//have adapter validate preset
+		$adapter->validatePreset($preset);
+		
+		//generate the final output string
+		$outFile = $preset->generateOutputPath($outFile);
+		
+		//make sure the output path is usable
+		$this->processOutputFilepath($preset->getDefinition(), $outFile, $overwrite);
+				
 		//check for incoming file extension restriction
 		$restrictions = $preset->getExtensionRestrictions();
 		if(!empty($restrictions) && !in_array(strtolower($inFile->getExtension()), $restrictions)) {
@@ -60,35 +64,37 @@ class Transcoder {
 			throw new Exception\InvalidOutputException("Adapters must return an instance of AC\Mutate\File, or throw an exception upon error.");
 		}
 		
+		//process returned file according to preset definition
+		$this->processReturnedFile($preset->getDefinition(), $return);
+		
 		return $return;
 	}
 	
-	protected function resolveOutputFormat(PresetDefinition $def, Adapter $adapter, $outFile = false) {
-		//check output path
-		$outPath = is_dir($outFile) ? $outFile : dirname($outFile);
-		if(!is_writable($path)) {
+	protected function processOutputFilepath(PresetDefinition $def, $path, $overwrite) {
+		//check for write permissions
+		$dir = is_dir($path) ? $path : dirname($path);
+		if(!is_writable($dir)) {
 			throw new Exception\FilePermissionException(sprintf("The output location (%s) is not writable by this process.", $path));
 		}
+		
+		//check for pre-existing file
+		if(file_exists($path) && !$overwrite) {
+			throw new Exception\FileAlreadyExistsException(sprintf("The file %s already exists, you must force the overwrite option to re-run the process.", $path));
+		} else if(file_exists($path)) {
+			//delete pre-existing file
+			unlink($path);
+		}
+		
+		//TODO: check for directory creation
 		
 		return $string;
 	}
 	
-	protected function validateAdapterWithInputAndDefinition(File $file, PresetDefinition $def, Adapter $adapter) {
-	
-	}
-	
-	protected function validateAdapterWithOutput(Adapter $adapter, File $outFile) {
-		//mostly directory checking, check write permissions
-	}
-	
-	protected function validatePresetDefinitionWithInput(File $file, PresetDefinition $def) {
-		if($inFile->isDir() && !$def->allowsDirectoryInput()) {
-			throw new Exception\InvalidInputException(sprintf("Preset %s does not allow directory input, you must specify a file.", $preset->getName()));
-		}
-		
+	protected function processReturnedFile(PresetDefinition $def, File $file) {
+		//TODO: set proper permissions
 	}
 		
-	public function transcodeWithJob($inFile, $job, $outFile = false) {
+	public function transcodeWithJob($inFile, $job) {
 		//TODO: implement
 	}
 	

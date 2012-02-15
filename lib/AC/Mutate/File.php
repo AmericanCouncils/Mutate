@@ -14,8 +14,6 @@ class File extends \SplFileInfo {
 	}
 	
 	public function getExtension() {
-		$exp = explode(".", $this->_path);
-
-		return end($exp);
+		return pathinfo($this->getFilename(), PATHINFO_EXTENSION);
 	}
 }

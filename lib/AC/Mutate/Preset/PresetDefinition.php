@@ -1,10 +1,14 @@
 <?php
 namespace AC\Mutate\Preset;
 
+/**
+ * PresetDefinition's define valid input/output for a preset.  The PresetDefinition is checked by the Transconder before executing.
+ *
+ */
 class PresetDefinition implements \Serializable {
-	protected $requiredAdapter = false;
 	protected $fileCreationMode = 0644;
 	protected $directoryCreationMode = 0755;
+	protected $inheritOutputExtension = true;
 	protected $allowDirectoryInput = false;
 	protected $allowDirectoryOutput = false;
 	protected $allowDirectoryCreation = false;
@@ -13,17 +17,20 @@ class PresetDefinition implements \Serializable {
 	protected $rejectedInputExtensions = false;
 	protected $returnType = 'file';
 	
-	public function getRequiredAdapter() {
-		return $this->requiredAdapter;
+	public function __construct($ops = array()) {
+		$this->setOptions($ops);
 	}
 	
 	public function getAllowDirectoryInput() {
+		return $this->allowDirectoryInput;
 	}
 	
 	public function getAllowDirectoryOutput() {
+		return $this->allowDirectoryOutput;
 	}
 
 	public function getAllowDirectoryCreation() {
+		return $this->allowDirectoryCreation;
 	}
 
 	public function getDirectoryCreationMode() {
@@ -35,11 +42,11 @@ class PresetDefinition implements \Serializable {
 	}
 		
 	public function getInputExtensionRestrictions() {
-		
+		return $this->inputExtensionRestrictions;
 	}
 	
-	public function getOutputExtension() {
-		
+	public function getOutputExtensionRestrictions() {
+		return $this->outputExtensionRestrictions;
 	}
 	
 	protected function setOptions(array $ops) {
@@ -62,8 +69,6 @@ class PresetDefinition implements \Serializable {
 	
 	public function unserialize($string) {
 		$data = unserialize($string);
-		foreach($data as $key => $val) {
-			$this->$key = $val;
-		}
+		$this->setOptions($data);
 	}
 }

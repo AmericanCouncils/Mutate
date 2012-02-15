@@ -1,11 +1,12 @@
 <?php
 
 namespace AC\Mutate\Preset;
+use \AC\Mutate\File;
 
-class Preset implements \ArrayAccess, \Serializable, \IteratorAggregate {
+class Preset implements \ArrayAccess, \Serializable {
 	protected $name = false;
 	protected $description = false;
-	protected $requiredAdapter = false;
+	protected $adapter = false;
 	protected $locked = false;
 	
 	
@@ -36,6 +37,14 @@ class Preset implements \ArrayAccess, \Serializable, \IteratorAggregate {
 	
 	protected function buildDefinition() {
 		return new PresetDefinition;
+	}
+	
+	public function validateInputFile(File $file) {
+		//TODO: move logic from Transcoder to here
+	}
+	
+	public function getAdapter() {
+		return $this->adapter;
 	}
 	
 	public function getDefinition() {
@@ -74,7 +83,7 @@ class Preset implements \ArrayAccess, \Serializable, \IteratorAggregate {
 	public function offsetGet($key) {
 		return $this->get($key);
 	}
-		
+	
 	public function offsetSet($key, $val) {
 		return $this->set($key, $val);
 	}
