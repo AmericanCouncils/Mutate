@@ -44,7 +44,7 @@ To use a script to simply transcode a file from one format to another, given a p
 	$> php bin/mutate transcode /path/to/test/file.wmv mp4_720
 	
 	# run a transcode job
-	$> php bin/mutate transcode:job /path/to/test/file.m4a job_name
+	$> php bin/mutate transcode:job /path/to/test/uploaded.wmv job_name
 
 # Implementation Details & Example Usage #
 
@@ -140,13 +140,13 @@ Presets shouldn't have dependencies, since they are really just a mechanism for 
 
 ### Writing a preset ###
 
-A preset con be declared in two ways.  You may create one by instantiating the preset class, passing it the required options, or you could extend the base `Preset` class.  The library provides many presets which extend the base `Preset` class, to make them more portable.  For example, check out the FFmpeg preset for generating 720 mp4 videos:
+A preset con be declared in two ways.  You may create one by instantiating the preset class, passing it the required options, or you could extend the base `Preset` class.  The library provides many presets which extend the base `Preset` class, to make them more portable.  Presets require two main parts, the first is the `PresetDefinition` instance, which standardizes what the accepted input/output formats can be.  The second is the actual preset options, which will be passed to the adapter.  For example, check out the FFmpeg preset for generating 720 mp4 videos:
 
-	TODO: paste example preset
+	TODO: paste example preset		
 
 ## Jobs ##
 
-	TODO, not quite sure how we'll implement this yet, but it will exist in the future
+A `Job` is a complex grouping of presets which perform multiple transcoding actions in one request.  It requires a little extra setup, but can make repetive tasks much easier to manage.  Jobs can apply multiple presets to one input file, or branch off and create several output files with one input.  For example, when optimizing videos for web delivery, you may need to transcode an uploaded video into several different formats of varying quality, and create several image thumbnails.  By defining a job classes which leverages several presets, you can define and register all of these actions in one spot.
 
 ### Registering a job ###
 
@@ -167,9 +167,11 @@ We will keep track of where we are, and where we're headed, in the development p
 Todo list:
 
 * Finalize Preset
+* Finalize PresetDefinition
 * Flesh out File object
+* Flesh out Adapter
 * Finish Transcoder
-* Unit tests in `/tests` for above 3 with PHPUnit
+* Unit tests in `/tests` for above objects with PHPUnit
 * add batch commands, which take directory/patterns
 * Implement job definitions
 	* Allow chained presets on an output file

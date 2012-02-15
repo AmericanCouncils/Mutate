@@ -38,6 +38,23 @@ class Application extends BaseApplication {
 	}
 	
 	/**
+	 * Run a command from string input.  By default will not catch exceptions when run in this manner.
+	 *
+	 * @param string $string 
+	 * @param string $catch 
+	 * @return \AC\Mutate\Application\ArrayOutput
+	 * @author Evan Villemez
+	 */
+	public function runCommand($string, $catch = false) {
+		$this->setCatchExceptions($catch);
+		$input = new \Symfony\Component\Console\Input\StringInput($string);
+		$output = new ArrayOutput;
+		$result = $this->run($input, $output);
+		$output->writeln("Finished with status: ".$result);
+		return $output;
+	}
+	
+	/**
 	 * Build the shared instance of the Transcoder
 	 *
 	 * @return AC\Mutate\Transcoder

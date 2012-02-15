@@ -2,18 +2,21 @@
 
 namespace AC\Mutate;
 
+use \AC\Mutate\Preset\Preset;
+use \AC\Mutate\Preset\PresetDefinition;
+
 class Transcoder {
 	protected $adapters = array();
 	protected $presets = array();
 	protected $jobs = array();
 
-	public function transcodeWithAdapter($inFile, $adapterName, $outFile, $options = array()) {
+	public function transcodeWithAdapter($inFile, $adapterName, $outFile, $options = array(), $defSettings = array()) {
 		//build a preset on the fly based on the options provided
-		$preset = new Preset('dynamic', $adapterName, $options);
+		$preset = new Preset('dynamic', $adapterName, $options, new PresetDefinition($defSettings));
 		return $this->transcodeWithPreset($inFile, $preset, $outFile);
 	}
 	
-	public function transcodeWithPreset($inFile, $preset, $outFile = false) {
+	public function transcodeWithPreset($inFile, $preset, $outFile = false, $overwrite = false) {
 		//get preset
 		if(!$preset instanceof Preset) {
 			$preset = $this->getPreset($preset);
@@ -28,43 +31,70 @@ class Transcoder {
 		if(!$inFile->exists()) {
 			throw new Exception\FileNotFoundException(sprintf("Input file %s could not be found.", $inFile->getFilename()));
 		}
+		
+		//have preset validate file
+		$preset->getDefinition()->validateInputFile($inFile);
 
-		//check for directory input
-		if($inFile->isDir() && !$preset->allowsDirectoryInput()) {
-			throw new Exception\InvalidInputException(sprintf("Preset %s does not allow directory input, you must specify a file.", $preset->getName()));
-		}
+		//get adapter
+		$adapter = $this->getAdapter($preset->getAdapter());
 		
-		//figure out output file path
-		if(!$outFile) {
-			//check if the preset allows directory output
-			if($preset->hasDirectoryOutput()) {
+		//have adapter validate file
+		$adapter->validateInputFile($inFile);
+		
+		//have adapter validate preset
+		$adapter->validatePreset($preset);
+		
+		//generate the final output string
+		$outFile = $preset->generateOutputPath($outFile);
+		
+		//make sure the output path is usable
+		$this->processOutputFilepath($preset->getDefinition(), $outFile, $overwrite);
 				
-			} else {
-				
-			}
+		//check for incoming file extension restriction
+		$restrictions = $preset->getExtensionRestrictions();
+		if(!empty($restrictions) && !in_array(strtolower($inFile->getExtension()), $restrictions)) {
+			throw new Exception\InvalidInputException(sprintf("Preset %s will not except files with extension %s", $preset->getName(), $inFile->getExtension()));
 		}
-		
-		//check output path
-		$outPath = is_dir($outFile) ? $outFile : dirname($outFile);
-		if(!is_writable($path)) {
-			throw new Exception\FilePermissionException(sprintf("The output location (%s) is not writable by this process.", $path));
-		}
-		
-		//get the adapter specified by the preset
-		$adapter = $this->getAdapter($preset->getRequiredAdapter());
 
 		//run the transcode
-		$return = $adapter->transcodeFile($inFile, $preset, $outFile);
+		$return = $adapter->transcodeFile($inFile, $outFile, $preset);
 		
 		//enforce proper return format
 		if(!$return instanceof File) {
 			throw new Exception\InvalidOutputException("Adapters must return an instance of AC\Mutate\File, or throw an exception upon error.");
 		}
 		
+		//process returned file according to preset definition
+		$this->processReturnedFile($preset->getDefinition(), $return);
+		
 		return $return;
 	}
+	
+	protected function processOutputFilepath(PresetDefinition $def, $path, $overwrite) {
+		//check for write permissions
+		$dir = is_dir($path) ? $path : dirname($path);
+		if(!is_writable($dir)) {
+			throw new Exception\FilePermissionException(sprintf("The output location (%s) is not writable by this process.", $path));
+		}
 		
-	public function transcodeWithJob($inFile, $job, $outFile = false) {
+		//check for pre-existing file
+		if(file_exists($path) && !$overwrite) {
+			throw new Exception\FileAlreadyExistsException(sprintf("The file %s already exists, you must force the overwrite option to re-run the process.", $path));
+		} else if(file_exists($path)) {
+			//delete pre-existing file
+			unlink($path);
+		}
+		
+		//TODO: check for directory creation
+		
+		return $string;
+	}
+	
+	protected function processReturnedFile(PresetDefinition $def, File $file) {
+		//TODO: set proper permissions
+	}
+		
+	public function transcodeWithJob($inFile, $job) {
 		//TODO: implement
 	}
 	
@@ -149,7 +179,7 @@ class Transcoder {
 	
 	public function removeJob($name) {
 		if(isset($this->jobs[$name])) {
-			return unset($this->jobs[$name]);
+			unset($this->jobs[$name]);
 		}
 
 		return $this;
