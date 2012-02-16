@@ -140,9 +140,15 @@ Presets shouldn't have dependencies, since they are really just a mechanism for 
 
 ### Writing a preset ###
 
-A preset con be declared in two ways.  You may create one by instantiating the preset class, passing it the required options, or you could extend the base `Preset` class.  The library provides many presets which extend the base `Preset` class, to make them more portable.  Presets require two main parts, the first is the `PresetDefinition` instance, which standardizes what the accepted input/output formats can be.  The second is the actual preset options, which will be passed to the adapter.  For example, check out the FFmpeg preset for generating 720 mp4 videos:
+A preset con be declared in two ways.  You may create one by instantiating the preset class, passing it the required options, or you could extend the base `Preset` class.  The library provides many presets which extend the base `Preset` class, to make them more portable.  Presets require two main parts, the first is the actual preset options, which will be passed to the adapter, and the second is a `FileHandlerDefinition` instance, which standardizes what the accepted input/output formats can be.  For example, check out the FFmpeg preset for generating 720 mp4 videos:
 
-	TODO: paste example preset		
+	TODO: paste example preset when finalized
+
+## FileHandlerDefinition instances ##
+
+Both Adapters and Presets can specify `FileHandlerDefintion` instances.  These objects are used to validate input files before a process is run, and a resulting output file if created.  The Transcoder uses the `FileHandlerDefinition` to handle input and output in a standardized way.  `FileHandlerDefinition` instances can set restrictions on allowed or rejected input extensions, mime types, mime encodings, for both input and output files.
+
+The FileHandlerDefinition instances are also used by the Transcoder to assemble an output file path, which will be passed to an adapter, if none was provided to the transcoder when running a job.
 
 ## Jobs ##
 
@@ -166,9 +172,8 @@ We will keep track of where we are, and where we're headed, in the development p
 
 Todo list:
 
+* Finalize FileHandlerDefinition and test
 * Finalize Preset
-* Finalize PresetDefinition
-* Flesh out File object
 * Flesh out Adapter
 * Finish Transcoder
 * Unit tests in `/tests` for above objects with PHPUnit

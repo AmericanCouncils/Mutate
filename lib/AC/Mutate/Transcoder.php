@@ -2,17 +2,15 @@
 
 namespace AC\Mutate;
 
-use \AC\Mutate\Preset\Preset;
-use \AC\Mutate\Preset\PresetDefinition;
-
 class Transcoder {
 	protected $adapters = array();
 	protected $presets = array();
 	protected $jobs = array();
+	protected $verified = array();
 
 	public function transcodeWithAdapter($inFile, $adapterName, $outFile, $options = array(), $defSettings = array()) {
 		//build a preset on the fly based on the options provided
-		$preset = new Preset('dynamic', $adapterName, $options, new PresetDefinition($defSettings));
+		$preset = new Preset('dynamic', $adapterName, $options, new FileHandlerDefinition($defSettings));
 		return $this->transcodeWithPreset($inFile, $preset, $outFile);
 	}
 	
@@ -27,16 +25,14 @@ class Transcoder {
 			$inFile = new File($inFile);
 		}
 		
-		//does input actually exist?
-		if(!$inFile->exists()) {
-			throw new Exception\FileNotFoundException(sprintf("Input file %s could not be found.", $inFile->getFilename()));
-		}
-		
 		//have preset validate file
 		$preset->getDefinition()->validateInputFile($inFile);
 
 		//get adapter
 		$adapter = $this->getAdapter($preset->getAdapter());
+		
+		//verify if this adapter can work in the current environment (happens only the first time it's loaded)
+		$this->verifyAdapter($adapter);
 		
 		//have adapter validate file
 		$adapter->validateInputFile($inFile);
@@ -45,7 +41,7 @@ class Transcoder {
 		$adapter->validatePreset($preset);
 		
 		//generate the final output string
-		$outFile = $preset->generateOutputPath($outFile);
+		$outFile = $preset->generateOutputPath($inFile, $outFile);
 		
 		//make sure the output path is usable
 		$this->processOutputFilepath($preset->getDefinition(), $outFile, $overwrite);
@@ -70,7 +66,7 @@ class Transcoder {
 		return $return;
 	}
 	
-	protected function processOutputFilepath(PresetDefinition $def, $path, $overwrite) {
+	protected function processOutputFilepath(FileHandlerDefinition $def, $path, $overwrite) {
 		//check for write permissions
 		$dir = is_dir($path) ? $path : dirname($path);
 		if(!is_writable($dir)) {
@@ -90,8 +86,21 @@ class Transcoder {
 		return $string;
 	}
 	
-	protected function processReturnedFile(PresetDefinition $def, File $file) {
-		//TODO: set proper permissions
+	protected function verifyAdapter(Adapter $adapter) {
+		if(!isset($this->verified[$adapter->getName()])) {
+			$return = $adapter->verifyEnvironment();
+			if(true !== $return) {
+				throw new AdapterException(sprintf("Adapter %s did not properly verify.", $adapter->getName()));
+			}
+
+			$this->verified[$adapter->getName()] = true;
+		}
+		
+		return true;
+	}
+	
+	protected function processReturnedFile(FileHandlerDefinition $def, File $file) {
+		//TODO: set proper permissions on files/directories
 	}
 		
 	public function transcodeWithJob($inFile, $job) {
