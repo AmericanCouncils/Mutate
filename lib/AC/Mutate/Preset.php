@@ -1,7 +1,6 @@
 <?php
 
-namespace AC\Mutate\Preset;
-use \AC\Mutate\File;
+namespace AC\Mutate;
 
 class Preset implements \ArrayAccess, \Serializable {
 	protected $name = false;
@@ -17,7 +16,7 @@ class Preset implements \ArrayAccess, \Serializable {
 	 */
 	protected $options = array();
 	
-	public function __construct($name = false, $adapter = false, $options = array(), PresetDefinition $def = null) {
+	public function __construct($name = false, $adapter = false, $options = array(), $definitionOptions = array()) {
 		if(!$this->name) {
 			$this->name = $name;
 		}
@@ -27,7 +26,7 @@ class Preset implements \ArrayAccess, \Serializable {
 
 		$this->options = $options;
 
-		$this->definition = ($def) ? $def : $this->buildDefinition();
+		$this->definition = (!empty($definitionOptions)) ? new FileHandlerDefinition($definitionOptions) : $this->buildDefinition();
 
 		$this->configure();
 	}
@@ -35,12 +34,22 @@ class Preset implements \ArrayAccess, \Serializable {
 	protected function configure() {
 	}
 	
+	/**
+	 * Meant to be override in extending preset classes.  The default FileHandlerDefinition will accept files of any format.
+	 *
+	 * @return void
+	 * @author Evan Villemez
+	 */
 	protected function buildDefinition() {
-		return new PresetDefinition;
+		return new FileHandlerDefinition;
 	}
 	
 	public function validateInputFile(File $file) {
-		//TODO: move logic from Transcoder to here
+		if(!$file->isDir() && !$this->definition->acceptsExtension($file->getExtension())) {
+			throw new InvalidInputFileException(sprintf("File type (%s) format not supported by this preset.", $file->getExtension()));
+		}
+		
+		
 	}
 	
 	public function getAdapter() {

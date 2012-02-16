@@ -1,20 +1,20 @@
 <?php
 
 namespace AC\Mutate\Tests;
-use \AC\Mutate\Preset\PresetDefinition;
+use \AC\Mutate\FileHandlerDefinition;
 
 include_once __DIR__."/../../../../vendor/.composer/autoload.php";
 
-class PresetDefinitionTest extends \PHPUnit_Framework_TestCase {
+class FileHandlerDefinitionTest extends \PHPUnit_Framework_TestCase {
 
 	public function testInstantiate() {
-		$d = new PresetDefinition;
+		$d = new FileHandlerDefinition;
 		$this->assertNotNull($d);
-		$this->assertTrue($d instanceof PresetDefinition);
+		$this->assertTrue($d instanceof FileHandlerDefinition);
 	}
 	
 	public function testGetDefaults() {
-		$d = new PresetDefinition;
+		$d = new FileHandlerDefinition;
 		$this->assertFalse($d->getAllowedInputExtensions());
 		$this->assertFalse($d->getRejectedInputExtensions());
 		$this->assertFalse($d->getRejectedOutputExtensions());
@@ -32,7 +32,7 @@ class PresetDefinitionTest extends \PHPUnit_Framework_TestCase {
 	}
 	
 	public function testSetOutputType() {
-		$d = new PresetDefinition;
+		$d = new FileHandlerDefinition;
 		$d->setOutputType('directory');
 		$this->assertTrue($d->allowDirectoryOutput());
 		$this->assertTrue($d->allowDirectoryCreation());
@@ -71,7 +71,7 @@ class PresetDefinitionTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	public function testAcceptsExtension1() {
-		$d = new PresetDefinition;
+		$d = new FileHandlerDefinition;
 		$d->setAllowedInputExtensions(array('mov','mp4'));
 		$this->assertTrue($d->acceptsExtension('mov'));
 		$this->assertTrue($d->acceptsExtension('mp4'));
@@ -79,11 +79,27 @@ class PresetDefinitionTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	public function testAcceptsExtension2() {
-		$d = new PresetDefinition;
+		$d = new FileHandlerDefinition;
 		$d->setRejectedInputExtensions(array('mov','mp4'));
 		$this->assertFalse($d->acceptsExtension('mov'));
 		$this->assertFalse($d->acceptsExtension('mp4'));
 		$this->assertTrue($d->acceptsExtension('wmv'));
+	}
+	
+	public function testAcceptsMimeEncoding1() {
+		
+	}
+	
+	public function testAcceptsMimeEncoding2() {
+		
+	}
+	
+	public function testAcceptsMimeType1() {
+		
+	}
+		
+	public function testAcceptsMimeType2() {
+		
 	}
 	
 	public function testAcceptsInputFile() {

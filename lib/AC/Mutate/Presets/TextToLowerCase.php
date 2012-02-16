@@ -12,7 +12,7 @@ class TextToLowerCase extends Preset {
 	protected $adapter = 'php_text';
 
 	protected function buildDefinition() {
-		$def = new PresetDefinition;
+		$def = new FileHandlerDefinition;
 		
 		//configure the definition used by the transcoder
 		$def
