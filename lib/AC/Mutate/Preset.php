@@ -52,6 +52,10 @@ class Preset implements \ArrayAccess, \Serializable {
 		
 	}
 	
+	public function assembleOutputPath(File $inFile, $outputPath = false) {
+		//TODO: write
+	}
+	
 	public function getAdapter() {
 		return $this->adapter;
 	}

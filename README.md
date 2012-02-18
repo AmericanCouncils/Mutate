@@ -31,7 +31,7 @@ If the install worked, you will see a list of available commands.  If not, proba
 
 # Basic Usage #
 
-The library is meant to be plugged into, and extended by, other libraries and frameworks.  However, it can also be used as is.  In order for all of the default presets and adapters to work, however, your system must have `ffmpeg` and `imagemagick` or `php-gd2` installed.  Their installation won't be covered in this documentation (yet).
+The library is meant to be plugged into, and extended by, other libraries and frameworks.  However, it can also be used as is.  In order for all of the default presets and adapters to work, however, your system must have `ffmpeg`, `handbrake`, and `imagemagick` installed.  Their installation won't be covered in this documentation (yet, in the future we'll have documentation about these technologies on the github wiki).
 
 To use a script to simply transcode a file from one format to another, given a preset, you can use the *mutate* script found in the `/bin` directory.
 
@@ -52,7 +52,7 @@ Mutate consists of several parts.  The first is the transcoder which unifies the
 
 ## Transcoder ##
 
-The Transcoder does the work of unifying the transcoding process.  What exactly it does when transcoding a file is determined by the presets, adapters and jobs which are registered.
+The Transcoder does the work of unifying the transcoding process.  What exactly it does when transcoding a file is determined by the registered presets, adapters and jobs.
 
 ### Usage ###
 
@@ -76,7 +76,7 @@ Using the transcoder by its self is simple, as it has no dependencies.  It can a
 	
 ## Adapters ##
 
-Adapters are wrappers for a pre-existing toolset which does the real work for any file conversion/manipulation.  Technically these adapters can be anything.  Common examples are `ffmpeg` for audio/video manipulation and ImageMagick or GD2 for image manipulation in PHP.  By default, the library provides `Adapter` implementations for those tools just listed, but others could be easily added.
+Adapters are wrappers for a pre-existing toolset which does the real work for any file conversion/manipulation.  Technically these adapters can be anything.  Common examples are `ffmpeg` for audio/video manipulation and ImageMagick image manipulation in PHP.  By default, the library provides `Adapter` implementations for those tools just listed, but others could be easily added.
 
 ### Registering an adapter ###
 
@@ -88,7 +88,8 @@ Adapters can be fairly simple, or quite complex.  The adapters included in the l
 
 	//register adapters provided with the library
 	$transcoder->registerAdapter(new FFmpegAdapter);
-	$transcoder->registerAdapter(new ImageMagickAdapter);
+	$transcoder->registerAdapter(new ImageFormatConverterAdapter);
+	$transcoder->registerAdapter(new ImageEffectsAdapter);
 	
 ### Writing an adapter ###
 
@@ -98,11 +99,13 @@ All adapters should function the same way - they should simply take an input fil
 	namespace My\Cool\Library;
 	use \AC\Mutate\Adapter;
 	use \AC\Mutate\File;
+	use \AC\Mutate\Preset;
 	
 	class FooAdapter extends Adapter {
 		protected $name = 'foo';
+		protected $description = "A made-up adapter for documentation purposes.";
 		
-		public function transcodeFile(File $inFile, $outFilePath, $options = array()) {
+		public function transcodeFile(File $inFile, Preset $preset, $outFilePath) {
 			
 			//do actual transcode process, however that needs to happen for this adapter
 			
@@ -113,16 +116,36 @@ All adapters should function the same way - they should simply take an input fil
 	
 ### Implementing command-line tools ###
 
-Many file conversion tools are available as command line executables.  Writing code to make executing command line processes safe and consistent accross environments has already been done well with the `Symfony\Process` component, which is provided with this library.  If you want to implement a tool that requires using the command line, we highly recommend using this library rather than writing extra code.
+Many file conversion tools are available as command line executables.  Writing code to make executing command line processes safe and consistent accross environments has already been done well with the `Symfony\Process` component, which is provided with this library.  If you want to implement a tool that requires using the command line, we highly recommend using this library rather than writing extra code.  Read more on the `Symfony\Process` component [here](https://github.com/symfony/Process).
 
-For example, the FFmpeg adapter uses the `Symfony\Process` component to actually execute its command line process.  See the excerpt below:
+For example, the FFmpeg and Handbrake adapters use the `Symfony\Process` component to actually execute its command line process.  The general flow goes something like the following:
 
-	// /src/Adapters/FFmpegAdapter.php
-	$proc = new \Symfony\Component\Process\Process($command);
-	$result = $proc->run(function ($buffer) {
-		//push output to cli
-	});
-	return $result;
+	public function transcodeFile(File $inFile, Preset $preset, $outFilePath) {
+		// ... parse the $preset object to assemble a command string in $command ...
+		
+		//use the Process component to build a process instance with the command string
+		$proc = new \Symfony\Component\Process\Process($command);
+		
+		//if this could be a long-running process, be sure to pass extra arguments to increase the timeout limit
+		$proc->setTimeout(3600);
+
+		//pass an anonymous function to the process so the adapter can get output as it occurs
+		$result = $proc->run(function ($type, $buffer) {
+			if($type === 'err') {
+				//throw an exception, depending on the error
+			} else {
+				//do something else with the output, whatever that is, maybe append to a status/log file
+			}
+		});
+
+		//check for error status return
+		if(!$proc->isSuccessful()) {
+			// ... if a file was created but there was an error, delete it ...
+			throw new \RuntimeException($proc->getExitCodeText());
+		}
+		
+		return new File($outputFilePath);
+	}
 
 ## Presets ##
 
@@ -172,18 +195,27 @@ We will keep track of where we are, and where we're headed, in the development p
 
 Todo list:
 
-* Finalize FileHandlerDefinition and test
+* test FileHandlerDefinition
 * Finalize Preset
+* Finish Transcoder's transcode logic
+* Flesh out Transcoder features
 * Flesh out Adapter
-* Finish Transcoder
-* Unit tests in `/tests` for above objects with PHPUnit
-* add batch commands, which take directory/patterns
+* Unit tests
+* Create Adapters:
+	* Handbrake
+	* FFmpeg
+	* mencoder (?)
+	* various ImageMagick adapters
+* Implement common presets for above adapters
+* Commands:
+	* Batch transcode commands
+	* environment tests (run all adapter verifications and show results)
 * Implement job definitions
 	* Allow chained presets on an output file
 	* Allow creation of multiple output files
 	* Questions:
-		* Allow dependencies or not?
-		* Is this an extension of a preset conceptually?  Probably...
+		* Allow dependencies or not?  Probably not...
+		* Treat this as an extension of a preset?  Probably...
 
 # Contributing #
 
