@@ -2,26 +2,28 @@
 
 namespace AC\Mutate\Presets;
 use AC\Mutate\Preset;
+use AC\Mutate\FileHandlerDefinition;
 
 /**
- * A very simple preset, for a very simple adapter, to illustrate how writing a preset works.
+ * A very simple preset, for a very simple adapter, to illustrate how writing a preset works.  This will be deleted once we have real presets that do useful things.
  */
 class TextToLowerCase extends Preset {
 	protected $name = "text_to_lower";
-	protected $description = "Transforms all text in a file into lower case.";
 	protected $adapter = 'php_text';
-
-	protected function buildDefinition() {
-		$def = new FileHandlerDefinition;
-		
-		//configure the definition used by the transcoder
-		$def
-			->setInputExtensionRestrictions(array('html','txt','md','markdown','textile','json','xml'))
-			->setInheritOutputExtension(true);
-
-		return $def;
+	protected $description = "Transforms all text in a file into lower case.  This will be deleted once we have real presets that do useful things.";
+	
+	/**
+	 * Restrict input encodings to formats we know PHP won't have a problem with.
+	 */
+	protected function buildInputDefinition() {
+		return new FileHandlerDefinition(array(
+			'allowedMimeEncodings' => array('us-ascii', 'utf-8')
+		));
 	}
-
+	
+	/**
+	 * Specify the function PHP will use to transform text in the file.
+	 */
 	public function configure() {
 		$this->setOptions(array(
 			'func' => 'strtolower'

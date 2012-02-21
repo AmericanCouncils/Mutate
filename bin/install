@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 //chdir to root
@@ -6,7 +7,7 @@ chdir($root);
 
 //exit if already installed
 if(file_exists($root."/composer.lock") && !in_array('--reinstall', $argv)) {
-	exit(PHP_EOL.PHP_EOL."Mutate is already installed.  Use the '--reinstall' option to force reinstall.".PHP_EOL.PHP_EOL);
+	exit(PHP_EOL.PHP_EOL."Mutate seems to be already installed.  Use the '--reinstall' option to force reinstall, or run the commands manually described in README.md in the library root.".PHP_EOL.PHP_EOL);
 }
 
 //run the install

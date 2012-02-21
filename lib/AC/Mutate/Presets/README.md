@@ -1,8 +1,10 @@
-# TODO #
+# Notes #
 
-Write default presets here.  All jobs should be namespaced in `AC\Mutate\Presets`.
+Write default presets here.  For detailed documentation, see the `README.md` in `presets/`.  The only different for presets in this directory is that they should all be namespaced in `AC\Mutate\Presets`.
 
-Planned presets:
+# Planned presets #
+
+This list is a stream-of-conscious thing, always changing... update as required.
 
 * Mp4_1080
 * Mp4_720
