@@ -1,42 +1,42 @@
+#!/usr/bin/env php
 <?php
+/*
+Note that this script will check for classes in the top-level adapter/presets/jobs directories provided with the library.  If any classes are found
+in those directories, they will automatically be registered.  By default these directories are empty, they're simply there as a convenient place to put
+code when the library is being used in a stand-alone manner.
+
+If those directories aren't present, then only the adapters/presets/jobs provided with the library will be registered.
+
+To see how to properly specify classes in those directories, see the README.md file in the root of this library.
+*/
+
 use \AC\Mutate\Application\Application;
 
 require(__DIR__."/../vendor/.composer/autoload.php");
 
-$application = new Application;
-
-//register user-added adapters
-$path = __DIR__."/../adapters/";
-foreach(scandir($path) as $item) {
-	if('.php' === substr($item, 0, -4)) {
-		if(@include_once($path.$item)) {
-			$class = substr($item, 0, -4); //get rid of ".php"
-			$application->getTranscoder()->registerAdapter(new $class);
+function load_objects_by_type($app, $type) {
+	$path = __DIR__."/../".$type."s/";
+	$registrationMethod = 'register'.ucfirst(strtolower($type));
+	
+	//scan directory to look for user-provided objects of specific type, then register them with the Transcoder
+	if(file_exists($path)) {
+		foreach(scandir($path) as $item) {
+			if('.php' === strtolower(substr($item, 0, -4))) {
+				if(@include_once($path.$item)) {
+					$class = substr($item, 0, -4); //get rid of ".php"
+					if(class_exists($class, false)) {				
+						$application->getTranscoder()->$registrationMethod(new $class);
+					}
+				}
+			}
 		}
 	}
 }
 
-//register user-added presets
-$path = __DIR__."/../presets/";
-foreach(scandir($path) as $item) {
-	if('.php' === substr($item, 0, -4)) {
-		if(@include_once($path.$item)) {
-			$class = substr($item, 0, -4); //get rid of ".php"
-			$application->getTranscoder()->registerPreset(new $class);
-		}
-	}
-}
+$app = new Application;
 
-//register user-added jobs
-$path = __DIR__."/../jobs/";
-foreach(scandir($path) as $item) {
-	if('.php' === substr($item, 0, -4)) {
-		if(@include_once($path.$item)) {
-			$class = substr($item, 0, -4); //get rid of ".php"
-			$application->getTranscoder()->registerJob(new $class);
-		}
-	}
-}
+load_objects_by_type($app, 'adapter');
+load_objects_by_type($app, 'preset');
+load_objects_by_type($app, 'job');
 
-//run the application
-$application->run();
+$app->run();

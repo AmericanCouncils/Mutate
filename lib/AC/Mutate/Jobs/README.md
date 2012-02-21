@@ -1,6 +1,6 @@
 # TODO #
 
-Write default jobs here.  All jobs should be namespaced in `AC\Mutate\Jobs`.
+Write default jobs here.  All jobs in this directory should be namespaced in `AC\Mutate\Jobs`.  For detailed documentation see the `README.md` in `jobs/`
 
 Planned adapters:
 

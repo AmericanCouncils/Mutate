@@ -9,38 +9,26 @@ class FileHandlerDefinition implements \Serializable {
 	//directory handling
 	protected $fileCreationMode = 0644;
 	protected $directoryCreationMode = 0755;
-	protected $allowDirectoryInput = false;
-	protected $allowDirectoryOutput = false;
+	protected $allowDirectory = false;
 	protected $allowDirectoryCreation = false;
 
 	//input restrictions
-	protected $allowedInputExtensions = false;
-	protected $rejectedInputExtensions = false;
-	protected $allowedInputMimes = false;
-	protected $rejectedInputMimes = false;
-	protected $allowedInputMimeTypes = false;
-	protected $rejectedInputMimeTypes = false;
-	protected $allowedInputMimeEncodings = false;
-	protected $rejectedInputMimeEncodings = false;
-
-	//output restrictions
-	protected $allowedOutputExtensions = false;
-	protected $rejectedOutputExtensions = false;
-	protected $allowedOutputMimes = false;
-	protected $rejectedOutputMimes = false;
-	protected $allowedOutputMimeTypes = false;
-	protected $rejectedOutputMimeTypes = false;
-	protected $allowedOutputMimeEncodings = false;
-	protected $rejectedOutputMimeEncodings = false;
+	protected $allowedExtensions = false;
+	protected $rejectedExtensions = false;
+	protected $allowedMimes = false;
+	protected $rejectedMimes = false;
+	protected $allowedMimeTypes = false;
+	protected $rejectedMimeTypes = false;
+	protected $allowedMimeEncodings = false;
+	protected $rejectedMimeEncodings = false;
 
 	//general i/o type
-	protected $outputExtension = false;
-	protected $inheritOutputExtension = false;
-	protected $inputType = 'file';
-	protected $outputType = 'file';
+	protected $requiredExtension = false;
+	protected $inheritExtension = true;
+	protected $requiredFileType = 'file';
 	
 	/**
-	 * Optionally set any properties via a hash in the constructor
+	 * Optionally set any properties via a hash in the constructor instead of using setter methods
 	 *
 	 * @param string $ops 
 	 */
@@ -54,60 +42,12 @@ class FileHandlerDefinition implements \Serializable {
 	 * @param File $file 
 	 * @return boolean
 	 */
-	public function acceptsInputFile(File $file) {
+	public function acceptsFile(File $file) {
 		try {
-			return $this->validateInputFile($file);
+			return $this->validateFile($file);
 		} catch (\Exception $e) {
 			return false;
 		}
-	}
-	
-	/**
-	 * Return boolean for whether or not the FileHandlerDefinition will accept a given file.
-	 *
-	 * @param File $file 
-	 * @return boolean
-	 */
-	public function acceptsOutputFile(File $file) {
-		try {
-			return $this->validateOutputFile($file);
-		} catch (\Exception $e) {
-			return false;
-		}
-	}
-
-	/**
-	 * Return true if FileHandlerDefinition accepts a given file, otherwise throw an exception on failure.
-	 *
-	 * @param File $file 
-	 * @return boolean
-	 */
-	public function validateInputFile(File $file) {
-		if(!$this->acceptsInputExtension($file->getExtension())) {
-			throw new Exception\InvalidInputException(sprintf("This definition does not accept files with extension %s", $file->getExtension()));
-		}
-		
-		if(!$this->acceptsInputMime($file->getMime())) {
-			throw new Exception\InvalidInputException(sprintf("This definition does not accept files with mime of %s", $file->getMime()));
-		}
-		
-		if(!$this->acceptsInputMimeType($file->getMimeType())) {
-			throw new Exception\InvalidInputException(sprintf("This definition does not accept files with mime type of %s", $file->getMimeType()));
-		}
-
-		if(!$this->acceptsInputMimeEncoding($file->getMimeEncoding())) {
-			throw new Exception\InvalidInputException(sprintf("This definition does not accept files with mime encoding of %s", $file->getMimeEncoding()));
-		}
-		
-		if(($file->isDir() && $this->inputType !== 'directory') || ($file->isDir() && !$this->allowDirectoryInput)) {
-			throw new Exception\InvalidInputException("This definition cannot accept a directory as input");
-		}
-		
-		if(!$file->isDir() && $this->inputType === 'directory') {
-			throw new Exception\InvalidInputException("This definition only accepts a directories as input");
-		}
-
-		return true;
 	}
 	
 	/**
@@ -116,169 +56,103 @@ class FileHandlerDefinition implements \Serializable {
 	 * @param File $file 
 	 * @return boolean
 	 */
-	public function validateOutputFile(File $file) {
-		if(!$this->acceptsOutputExtension($file->getExtension())) {
-			throw new Exception\InvalidOutputException(sprintf("This definition %s should not create files with extension %s", get_class($this), $file->getExtension()));
+	public function validateFile(File $file) {
+		if(!$this->acceptsExtension($file->getExtension())) {
+			throw new Exception\InvalidFileException(sprintf("This definition does not accept files with extension %s", $file->getExtension()));
 		}
 		
-		if(!$this->acceptsOutputMime($file->getMime())) {
-			throw new Exception\InvalidOutputException(sprintf("This definition %s should not create files with mime of %s", get_class($this), $file->getMime()));
+		if(!$this->acceptsMime($file->getMime())) {
+			throw new Exception\InvalidFileException(sprintf("This definition does not accept files with mime of %s", $file->getMime()));
 		}
 		
-		if(!$this->acceptsOutputMimeType($file->getMimeType())) {
-			throw new Exception\InvalidOutputException(sprintf("This definition %s should not create files with mime type of %s", get_class($this), $file->getMimeType()));
+		if(!$this->acceptsMimeType($file->getMimeType())) {
+			throw new Exception\InvalidFileException(sprintf("This definition does not accept files with mime type of %s", $file->getMimeType()));
 		}
 
-		if(!$this->acceptsOutputMimeEncoding($file->getMimeEncoding())) {
-			throw new Exception\InvalidOutputException(sprintf("This definition %s should not create files with mime encoding of %s", get_class($this), $file->getMimeEncoding()));
-		}
-
-		if($file->isDir() && ($this->outputType !== 'directory' || !$this->allowDirectoryOutput)) {
-			throw new Exception\InvalidOutputException("This definition does not support directories as output");
+		if(!$this->acceptsMimeEncoding($file->getMimeEncoding())) {
+			throw new Exception\InvalidFileException(sprintf("This definition does not accept files with mime encoding of %s", $file->getMimeEncoding()));
 		}
 		
-		if(!$file->isDir() && $this->outputType === 'directory') {
-			throw new Exception\InvalidOutputException("This definition only supports directories as output");
+		if((!$this->allowDirectory && $file->isDir()) || ($this->requiredFileType === 'directory' && !$file->isDir())) {
+			throw new Exception\InvalidFileException("This definition cannot accept a directory as input");
+		}
+		
+		if(!$file->isDir() && $this->requiredFileType === 'directory') {
+			throw new Exception\InvalidFileException("This definition only accepts a directories as input");
 		}
 
 		return true;
 	}
+	
 
-
-	public function acceptsInputExtension($ext) {
+	public function acceptsExtension($ext) {
 		$ext = trim(strtolower($ext), ".");
-		if($this->getAllowedInputExtensions() && !in_array($ext, $this->getAllowedInputExtensions())) {
+		if($this->getAllowedExtensions() && !in_array($ext, $this->getAllowedExtensions())) {
 			return false;
 		}
 		
-		if($this->getRejectedInputExtensions() && in_array($ext, $this->getRejectedInputExtensions())) {
-			return false;
-		}
-		
-		return true;
-	}
-
-	public function acceptsInputMime($ext) {
-		if($this->getAllowedInputMimes() && !in_array($ext, $this->getAllowedInputMimes())) {
-			return false;
-		}
-		
-		if($this->getRejectedInputMimes() && in_array($ext, $this->getRejectedInputMimes())) {
-			return false;
-		}
-		
-		return true;
-	}
-	
-	public function acceptsInputMimeType($ext) {
-		if($this->getAllowedInputMimeTypes() && !in_array($ext, $this->getAllowedInputMimeTypes())) {
-			return false;
-		}
-		
-		if($this->getRejectedInputMimeTypes() && in_array($ext, $this->getRejectedInputMimeTypes())) {
-			return false;
-		}
-		
-		return true;
-	}
-	
-	public function acceptsInputMimeEncoding($ext) {
-		if($this->getAllowedInputMimeEncodings() && !in_array($ext, $this->getAllowedInputMimeEncodings())) {
-			return false;
-		}
-		
-		if($this->getRejectedInputMimeEncodings() && in_array($ext, $this->getRejectedInputMimeEncodings())) {
-			return false;
-		}
-		
-		return true;
-	}
-	
-	public function acceptsOutputExtension($ext) {
-		$ext = trim(strtolower($ext), ".");
-		if($this->getAllowedOutputExtensions() && !in_array($ext, $this->getAllowedOutputExtensions())) {
-			return false;
-		}
-		
-		if($this->getRejectedOutputExtensions() && in_array($ext, $this->getRejectedOutputExtensions())) {
+		if($this->getRejectedExtensions() && in_array($ext, $this->getRejectedExtensions())) {
 			return false;
 		}
 		
 		return true;
 	}
 
-	public function acceptsOutputMime($ext) {
-		if($this->getAllowedOutputMimes() && !in_array($ext, $this->getAllowedOutputMimes())) {
+	public function acceptsMime($ext) {
+		if($this->getAllowedMimes() && !in_array($ext, $this->getAllowedMimes())) {
 			return false;
 		}
 		
-		if($this->getRejectedOutputMimes() && in_array($ext, $this->getRejectedOutputMimes())) {
-			return false;
-		}
-		
-		return true;
-	}
-	
-	public function acceptsOutputMimeType($ext) {
-		if($this->getAllowedOutputMimeTypes() && !in_array($ext, $this->getAllowedOutputMimeTypes())) {
-			return false;
-		}
-		
-		if($this->getRejectedOutputMimeTypes() && in_array($ext, $this->getRejectedOutputMimeTypes())) {
+		if($this->getRejectedMimes() && in_array($ext, $this->getRejectedMimes())) {
 			return false;
 		}
 		
 		return true;
 	}
 	
-	public function acceptsOutputMimeEncoding($ext) {
-		if($this->getAllowedOutputMimeEncodings() && !in_array($ext, $this->getAllowedOutputMimeEncodings())) {
+	public function acceptsMimeType($ext) {
+		if($this->getAllowedMimeTypes() && !in_array($ext, $this->getAllowedMimeTypes())) {
 			return false;
 		}
 		
-		if($this->getRejectedOutputMimeEncodings() && in_array($ext, $this->getRejectedOutputMimeEncodings())) {
+		if($this->getRejectedMimeTypes() && in_array($ext, $this->getRejectedMimeTypes())) {
 			return false;
 		}
 		
 		return true;
 	}
+	
+	public function acceptsMimeEncoding($ext) {
+		if($this->getAllowedMimeEncodings() && !in_array($ext, $this->getAllowedMimeEncodings())) {
+			return false;
+		}
+		
+		if($this->getRejectedMimeEncodings() && in_array($ext, $this->getRejectedMimeEncodings())) {
+			return false;
+		}
+		
+		return true;
+	}
+	
 
-	public function getOutputExtension() {
-		return $this->outputExtension;
+	public function getInheritExtension() {
+		return $this->inheritExtension;
 	}
 	
-	public function getInheritOutputExtension() {
-		return $this->inheritOutputExtension;
-	}
-	
-	public function setInheritOutputExtension($bool) {
-		$this->setInheritOutputExtension = (bool) $bool;
-		return $this;
-	}
-	
-	public function setOutputExtension($ext) {
-		$this->outputExtension = $ext;
-		return $this;
-	}
-		
-	public function getAllowDirectoryInput() {
-		return $this->allowDirectoryInput;
-	}
-	
-	public function getAllowDirectoryOutput() {
-		return $this->allowDirectoryOutput;
-	}
-
-	public function setAllowDirectoryInput($bool) {
-		$this->allowDirectoryInput = (bool) $bool;
-		return $this;
-	}
-	
-	public function setAllowDirectoryOutput($bool) {
-		$this->allowDirectoryOutput = (bool) $bool;
+	public function setInheritExtension($bool) {
+		$this->inheritExtension = (bool) $bool;
 		return $this;
 	}
 
+	public function getAllowDirectory() {
+		return $this->allowDirectory;
+	}
+	
+	public function setAllowDirectory($bool) {
+		$this->allowDirectory = (bool) $bool;
+		return $this;
+	}
+	
 	public function getAllowDirectoryCreation() {
 		return $this->allowDirectoryCreation;
 	}
@@ -306,183 +180,100 @@ class FileHandlerDefinition implements \Serializable {
 		return $this;
 	}
 	
-	public function getInputType() {
-		return $this->inputType;
+	public function getRequiredFileType() {
+		return $this->requiredFileType;
 	}
 	
-	public function setInputType($type) {
+	public function setRequiredFileType($type) {
 		if(!in_array($type, array('file','directory'))) {
 			throw new \InvalidArgumentException("Input type must be either 'file' or 'directory'.");
 		}
 		
-		$this->inputType = $type;
-		return $this;
-	}
-	
-	public function getOutputType() {
-		return $this->outputType;
-	}
-	
-	public function setOutputType($type) {
-		if(!in_array($type, array('file','directory'))) {
-			throw new \InvalidArgumentException("Output type must be either 'file' or 'directory'.");
+		if($type === 'directory') {
+			$this->setAllowDirectory(true);
+		} else {
+			$this->setAllowDirectory(false);
 		}
+
+		$this->requiredFileType = $type;
+		return $this;
+	}
 		
-		$this->oututType = $type;
-		return $this;
-	}
-
-
 	/**
-	 * Input restriction methods below
+	 *  type restriction methods below
 	 */
 
-	public function getAllowedInputExtensions() {
-		return $this->allowedInputExtensions;
+	public function getAllowedExtensions() {
+		return $this->allowedExtensions;
 	}
 	
-	public function setAllowedInputExtensions(array $arr) {
-		$this->allowedInputExtensions = $arr;
+	public function setAllowedExtensions(array $arr) {
+		$this->allowedExtensions = $arr;
 		return $this;
 	}
 
-	public function getAllowedInputMimes() {
-		return $this->allowedInputMimes;
+	public function getAllowedMimes() {
+		return $this->allowedMimes;
 	}
 	
-	public function setAllowedInputMimes(array $arr) {
-		$this->allowedInputMimes = $arr;
+	public function setAllowedMimes(array $arr) {
+		$this->allowedMimes = $arr;
 		return $this;
 	}
 
-	public function getAllowedInputMimeTypes() {
-		return $this->allowedInputMimeTypes;
+	public function getAllowedMimeTypes() {
+		return $this->allowedMimeTypes;
 	}
 	
-	public function setAllowedInputMimeTypes(array $arr) {
-		$this->allowedInputMimeTypes = $arr;
+	public function setAllowedMimeTypes(array $arr) {
+		$this->allowedMimeTypes = $arr;
 		return $this;
 	}
 
-	public function getAllowedInputMimeEncodings() {
-		return $this->allowedInputMimeEncodings;
+	public function getAllowedMimeEncodings() {
+		return $this->allowedMimeEncodings;
 	}
 	
-	public function setAllowedInputMimeEncodings(array $arr) {
-		$this->allowedInputMimeEncodings = $arr;
+	public function setAllowedMimeEncodings(array $arr) {
+		$this->allowedMimeEncodings = $arr;
 		return $this;
 	}
 
-	public function getRejectedInputExtensions() {
-		return $this->rejectedInputExtensions;
+	public function getRejectedExtensions() {
+		return $this->rejectedExtensions;
 	}
 	
-	public function setRejectedInputExtensions(array $arr) {
-		$this->rejectedInputExtensions = $arr;
+	public function setRejectedExtensions(array $arr) {
+		$this->rejectedExtensions = $arr;
 		return $this;
 	}
 
-	public function getRejectedInputMimes() {
-		return $this->rejectedInputMimes;
+	public function getRejectedMimes() {
+		return $this->rejectedMimes;
 	}
 	
-	public function setRejectedInputMimes(array $arr) {
-		$this->rejectedInputMimes = $arr;
+	public function setRejectedMimes(array $arr) {
+		$this->rejectedMimes = $arr;
 		return $this;
 	}
 
-	public function getRejectedInputMimeTypes() {
-		return $this->rejectedInputMimeTypes;
+	public function getRejectedMimeTypes() {
+		return $this->rejectedMimeTypes;
 	}
 	
-	public function setRejectedInputMimeTypes(array $arr) {
-		$this->rejectedInputMimeTypes = $arr;
+	public function setRejectedMimeTypes(array $arr) {
+		$this->rejectedMimeTypes = $arr;
 		return $this;
 	}
 
-	public function getRejectedInputMimeEncodings() {
-		return $this->rejectedInputMimeEncodings;
+	public function getRejectedMimeEncodings() {
+		return $this->rejectedMimeEncodings;
 	}
 	
-	public function setRejectedInputMimeEncodings(array $arr) {
-		$this->rejectedInputMimeEncodings = $arr;
+	public function setRejectedMimeEncodings(array $arr) {
+		$this->rejectedMimeEncodings = $arr;
 		return $this;
 	}
-
-	/**
-	 * Output restriction methods below
-	 */
- 	public function getAllowedOutputExtensions() {
- 		return $this->allowedOutputExtensions;
- 	}
-	
- 	public function setAllowedOutputExtensions(array $arr) {
- 		$this->allowedOutputExtensions = $arr;
- 		return $this;
- 	}
-
- 	public function getAllowedOutputMimes() {
- 		return $this->allowedOutputMimes;
- 	}
-	
- 	public function setAllowedOutputMimes(array $arr) {
- 		$this->allowedOutputMimes = $arr;
- 		return $this;
- 	}
-
- 	public function getAllowedOutputMimeTypes() {
- 		return $this->allowedOutputMimeTypes;
- 	}
-	
- 	public function setAllowedOutputMimeTypes(array $arr) {
- 		$this->allowedOutputMimeTypes = $arr;
- 		return $this;
- 	}
-
- 	public function getAllowedOutputMimeEncodings() {
- 		return $this->allowedOutputMimeEncodings;
- 	}
-	
- 	public function setAllowedOutputMimeEncodings(array $arr) {
- 		$this->allowedOutputMimeEncodings = $arr;
- 		return $this;
- 	}
-
- 	public function getRejectedOutputExtensions() {
- 		return $this->rejectedOutputExtensions;
- 	}
-	
- 	public function setRejectedOutputExtensions(array $arr) {
- 		$this->rejectedOutputExtensions = $arr;
- 		return $this;
- 	}
-
- 	public function getRejectedOutputMimes() {
- 		return $this->rejectedOutputMimes;
- 	}
-	
- 	public function setRejectedOutputMimes(array $arr) {
- 		$this->rejectedOutputMimes = $arr;
- 		return $this;
- 	}
-
- 	public function getRejectedOutputMimeTypes() {
- 		return $this->rejectedOutputMimeTypes;
- 	}
-	
- 	public function setRejectedOutputMimeTypes(array $arr) {
- 		$this->rejectedOutputMimeTypes = $arr;
- 		return $this;
- 	}
-
- 	public function getRejectedOutputMimeEncodings() {
- 		return $this->rejectedOutputMimeEncodings;
- 	}
-	
- 	public function setRejectedOutputMimeEncodings(array $arr) {
- 		$this->rejectedOutputMimeEncodings = $arr;
- 		return $this;
- 	}
 
 	/**
 	 * Set multiple properties as a key/val hash in one operation.
