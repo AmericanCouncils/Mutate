@@ -6,9 +6,9 @@ Mutate is a file transcoding tool abstraction library.  It provides a common int
 
 If you are using the library as a component in another framework or plugin, then there isn't much to set up.  The Mutate code is organized according to PSR-0 standards, so its namespace (`AC\Mutate`) can be registered however you handle autoloading in your framework of choice.
 
-On the other hand, if you want to use Mutate as a stand-alone app for transcoding files via the command-line, some dependencies are required.  You can easily install these dependencies by running the install script included in `/bin` or manually running [Composer](http://packagist.org/) from the Mutate root.  See below:
+On the other hand, if you want to use Mutate as a stand-alone application for transcoding files via the command-line, some dependencies are required.  You can easily install these dependencies by running the install script included in `/bin` or manually running [Composer](http://packagist.org/) from the Mutate root.  See below:
 		
-	# go to Mutate root
+	# go to Mutate root (the directory where this file is located)
 	$> cd /path/to/mutate_root
 	
 	$> php bin/install
@@ -29,13 +29,17 @@ You can see if the installation worked by running the following:
 	
 If the install worked, you will see a list of available commands.  If not, probably errors. :)
 
-Also, if you want to make usage of the `mutate` command available from anywhere, you can symlink `bin/mutate` script into anywhere on your include path, such as `/usr/bin`.
+To see which presets/adapters provided with the library are usable on your system, run the following:
+
+	php bin/mutate status
+
+Also, if you want to make usage of the `mutate` command available from anywhere, you can symlink the `bin/mutate` script into anywhere on your include path, such as `/usr/bin`.
 
 # Basic Usage #
 
 The library is meant to be plugged into, and extended by, other libraries and frameworks.  However, it can also be used as is.  In order for all of the default presets and adapters to work, however, your system must have `ffmpeg`, `handbrake`, and `imagemagick` installed.  Their installation won't be covered in this documentation (yet, in the future we'll have documentation about these technologies on the github wiki).
 
-To use a script to simply transcode a file from one format to another, given a preset, you can use the *mutate* script found in the `/bin` directory.
+To simply transcode a file from one format to another, given a preset, you can use the *mutate* script found in the `/bin` directory.
 
 	$> cd /path/to/mutate_root
 
@@ -50,19 +54,21 @@ To use a script to simply transcode a file from one format to another, given a p
 
 # Implementation Details & Example Usage #
 
-If you intend to plug Mutate into another framework, or extend it in any way, then knowing the details about it's built will help.  The core library doesn't actually have any dependencies - the dependencies that are installed as part of the install process are there to make the library usable as a standalone project, and to provide some tools for specific transcoding adapters to leverage.  If you just want to use/extend the core library directly, then the code in `lib/AC/Mutate` and `lib/AC/Mutate/Exception` is all you really need.
+If you intend to plug Mutate into another framework, or extend it in any way, then knowing the details about how it's built will help.  The core library doesn't actually have any dependencies - the dependencies that are installed as part of the install process are there to make the library usable as a standalone project, and to provide some tools for specific transcoding adapters to leverage.  If you just want to use/extend the core library directly, then the code found in the `lib/AC/Mutate` and `lib/AC/Mutate/Exception` directories is all you really need.
 
-The core Mutate library consists of several parts.  The first is the `Transcoder` class which unifies the transcode process.  It provides the glue through which various adapters, presets and transcoding jobs are registered and can interact in order to transcode files consistently and safely.
+The core Mutate library consists of several parts.
 
-Second, there are `Adapter` classes which are plugins that receive standardized input, provide some logic to transcode a file, and return some standardized output.
+1. The first is the `Transcoder` class which unifies the transcode process.  It provides the glue through which various adapters, presets and transcoding jobs are registered and can interact in order to transcode files consistently and safely.
 
-Third are the `Preset` classes, which provide groupings of options for the `Adapter` to use when implementing its transcode logic.
+2. Second, there are `Adapter` classes which are plugins that receive standardized input, provide some logic to transcode a file, and return some standardized output.
 
-Fourth are `Files` which is a thin extension of PHP's standard `SplFileObject` class.  These, in conjunction with `Preset` instances, are what `Adapters` take as input.  If the `Adapter` returns a file, it should also be an instance of `AC\Mutate\File`.
+3. Third are the `Preset` classes, which provide groupings of options for the `Adapter` to use when implementing its transcode logic.
 
-Fifth are `FileHandlerDefinition` instances.  These can be specified by Adapters, as well as Presets, and define what types of files are allowed as both input and output.  These instances are used internally by the `Transcoder` to ensure valid input/output and to assist in building a valid output file path if none is specified.
+4. Fourth are `Files` which is a thin extension of PHP's standard `SplFileObject` class.  These, in conjunction with `Preset` instances, are what `Adapters` take as input.  If the `Adapter` returns a file, it should also be an instance of `AC\Mutate\File`.
 
-Last, there are `Job` classes.  Jobs are complex groupings of presets.  For example, if you want to transcode multiple files from one input file, or apply multiple presets to one file, that type of interaction can be specified in a `Job` class.
+5. Fifth are `FileHandlerDefinition` instances.  These can be specified by Adapters, as well as Presets, and define what types of files are allowed as both input and output.  These instances are used internally by the `Transcoder` to ensure valid input/output and to assist in building a valid output file path if none is specified.
+
+6. Last, there are `Job` classes.  Jobs are complex groupings of presets.  For example, if you want to transcode multiple files from one input file, or apply multiple presets to one file, that type of interaction can be specified in a `Job` class.
 
 Below you will see basic example usage and implementation of each the pieces mentioned above.
 
@@ -72,17 +78,17 @@ The Transcoder does the work of standardizing the transcoding input and output. 
 
 ### Usage ###
 
-Using the transcoder by its self is simple, as it has no dependencies.  It can accept presets/adapters/jobs from anywhere - those may have dependencies you specify.
+Using the Transcoder by its self is simple, as it has no dependencies.  It can accept presets/adapters/jobs from anywhere, some of which may have their own dependencies if necessary.
 
 	$transcoder = new AC\Mutate\Transcoder;
 	
 	// ... register presets, adapters & jobs ... 
 	$transcoder->registerAdapter(new MyCustomFFmpegAdapter);
-	$transcoder->registerPreset(new MyFFmpegHDPreset);
+	$transcoder->registerPreset(new WebmHDPreset);
 	$transcoder->registerJob(new MyHtml5VideoJob);
 	
 	//transcode one file using a preset
-	$newFile = $transcoder->transcode($inputFilePath, 'video-hd', $outputFilePath);
+	$newFile = $transcoder->transcode($inputFilePath, 'webm-hd', $outputFilePath);
 	
 	//transcode a file with a specific adaptor and options
 	$newFile = $transcoder->transcodeWithAdapter($inputFilePath, 'custom-ffmpeg', array(
@@ -95,7 +101,7 @@ Using the transcoder by its self is simple, as it has no dependencies.  It can a
 	
 ## Adapters ##
 
-Adapters are wrappers for a pre-existing toolset which does the real work for any file conversion/manipulation.  Technically these adapters can be anything.  Common examples are `ffmpeg` for audio/video manipulation and ImageMagick for image manipulation in PHP.  By default, the library provides `Adapter` implementations for those tools just listed, but others could be easily added.
+Adapters are wrappers for a pre-existing toolset which does the real work for any file conversion/manipulation.  Technically these adapters can be anything.  Common examples are `ffmpeg` for audio/video manipulation and ImageMagick for image manipulation in PHP.  By default, the library provides `Adapter` implementations for several commonly used tools, including those just mentioned.
 
 ### Registering an adapter ###
 
@@ -158,7 +164,6 @@ For example, the FFmpeg and Handbrake adapters use the `Symfony\Process` compone
 
 		//check for error status return
 		if(!$proc->isSuccessful()) {
-			// ... if a file was created but there was an error, delete it ...
 			throw new \RuntimeException($proc->getExitCodeText());
 		}
 		
@@ -217,10 +222,16 @@ We will keep track of where we are, and where we're headed, in the development p
 
 Todo list:
 
-* Flesh out Adapter
-* Flesh out Transcoder features
-* Finish Transcoder's transcode logic
-* Finish Unit tests for core library
+* Implement Preset::generateOutputPath
+* Finish Preset unit tests
+* Implement Transcoder::processOutputFilepath
+* Unit test and document Adapter
+* Unit test and document Transcoder
+* Implement jobs
+	* Allow chained presets on one output file
+	* Allow creation of multiple output files
+	* Questions:
+		* Treat this as an extension of a preset?  Probably...
 * Create Adapters:
 	* Handbrake
 	* FFmpeg
@@ -228,14 +239,12 @@ Todo list:
 	* various ImageMagick adapters
 * Implement common presets for above adapters
 * Commands:
+	* Add conflict flag options to transcode commands
 	* Batch transcode commands
-	* environment tests (run all adapter verifications and show results)
-	* mutate:status - show adapter status results, show list of *usable* presets based on adapter status
-* Implement job definitions
-	* Allow chained presets on one output file
-	* Allow creation of multiple output files
-	* Questions:
-		* Treat this as an extension of a preset?  Probably...
+		* `transcode:batch [pattern]`
+		* `transcode:batch:adapter [pattern]`
+		* `transcode:batch:job [pattern]`
+	* `status` - verify adapters, show results, show list of *usable* presets based on adapter status
 
 # Contributing #
 

@@ -3,108 +3,224 @@
 namespace AC\Mutate;
 
 class Transcoder {
-	protected $adapters = array();
-	protected $presets = array();
-	protected $jobs = array();
-	protected $verified = array();
-
-	public function transcodeWithAdapter($inFile, $adapterName, $outFile, $options = array(), $defSettings = array()) {
-		//build a preset on the fly based on the options provided
-		$preset = new Preset('dynamic', $adapterName, $options, new FileHandlerDefinition($defSettings));
-		return $this->transcodeWithPreset($inFile, $preset, $outFile);
-	}
 	
-	public function transcodeWithPreset($inFile, $preset, $outFile = false, $overwrite = false) {
-		//get preset
-		if(!$preset instanceof Preset) {
-			$preset = $this->getPreset($preset);
-		}
-		
-		//standardize input format
+	/**
+	 * If a file already exists, remove the pre-existing file before initiating the transcode
+	 */
+	const ONCONFLICT_DELETE = 1;
+
+	/**
+	 * If a file already exists, throw an exception.
+	 */
+	const ONCONFLICT_EXCEPTION = 2;
+
+	/**
+	 * If file already exists, create a derivative file path with numerical increment to avoid conflicts.
+	 */
+	const ONCONFLICT_INCREMENT = 3;
+	
+	/**
+	 * If a transcode process fails, delete any newly created files
+	 */
+	const ONFAIL_DELETE = 1;
+
+	/**
+	 * If the transcode process fails, keep any created files
+	 */
+	const ONFAIL_PRESERVE = 2;
+
+	/**
+	 * Storage array of registered adapters
+	 *
+	 * Format is hash of adapter_name => object
+	 *
+	 * @var array
+	 */
+	protected $adapters = array();
+	
+	/**
+	 * Storage array of registered presets
+	 *
+	 * Format is hash of preset_name => object
+	 *
+	 * @var array
+	 */
+	protected $presets = array();
+	
+	/**
+	 * Storage array of registered jobs.
+	 *
+	 * Format is hash of job_name => object
+	 *
+	 * @var array
+	 */
+	protected $jobs = array();
+	
+	/**
+	 * Array of registered TranscoderEventListeners
+	 *
+	 * @var array
+	 */
+	protected $listeners = array();
+
+
+	/**
+	 * The core method of the transcode process.  Takes file input, validates, runs a transcode process, validates return, and returns file output.
+	 *
+	 * @param mixed $inFile - if a string filepath is given instead of an instance of \AC\Mutate\File, then a new File instance will be created automatically
+	 * @param mixed $preset - if a string is given instead of an instance of \AC\Mutate\Preset, then it will look for a Preset with a name matching the received string
+	 * @param string $outFile - an optional output file path, even if provided explicity, the Transcoder will validate and process it before starting a transcode process
+	 * @param string $conflictMode - flag for what to do if an output file already exists at the given output path
+	 * @param string $failMode - flag for what to do with the output file(s) on a failed transcode
+	 * @return void - \AC\Mutate\File instance for newly created file
+	 */
+	public function transcodeWithPreset($inFile, $preset, $outFile = false, $conflictMode = self::ONCONFLICT_INCREMENT, $failMode = self::ONFAIL_DELETE) {
+
+		//get file
 		if(!$inFile instanceof File && is_string($inFile)) {
 			$inFile = new File($inFile);
 		}
 		
+		//get preset
+		if(!$preset instanceof Preset) {
+			$preset = $this->getPreset($preset);
+		}
+				
 		//have preset validate file
-		$preset->getDefinition()->validateInputFile($inFile);
+		$preset->validateInputFile($inFile);
 
 		//get adapter
 		$adapter = $this->getAdapter($preset->getAdapter());
 		
 		//verify if this adapter can work in the current environment (happens only the first time it's loaded)
-		$this->verifyAdapter($adapter);
+		if(!$adapter->verify()) {
+			throw new \RuntimeException($adapter->getVerificationError());
+		}
 		
-		//have adapter validate file
+		//have adapter verify inputs
 		$adapter->validateInputFile($inFile);
-		
-		//have adapter validate preset
 		$adapter->validatePreset($preset);
 		
 		//generate the final output string
-		$outFile = $preset->generateOutputPath($inFile, $outFile);
+		$outFilePath = $preset->generateOutputPath($inFile, $outFile);
 		
-		//make sure the output path is usable
-		$this->processOutputFilepath($preset->getDefinition(), $outFile, $overwrite);
-				
-		//check for incoming file extension restriction
-		$restrictions = $preset->getExtensionRestrictions();
-		if(!empty($restrictions) && !in_array(strtolower($inFile->getExtension()), $restrictions)) {
-			throw new Exception\InvalidInputException(sprintf("Preset %s will not except files with extension %s", $preset->getName(), $inFile->getExtension()));
-		}
+		//make sure the output path is valid
+		$outFilePath = $this->processOutputFilepath($preset->getOutputDefinition(), $outFilePath, $conflictMode);
 
-		//run the transcode
-		$return = $adapter->transcodeFile($inFile, $outFile, $preset);
-		
-		//enforce proper return format
-		if(!$return instanceof File) {
-			throw new Exception\InvalidOutputException("Adapters must return an instance of AC\Mutate\File, or throw an exception upon error.");
+		try {
+			//notify listeners of transcode start
+			$this->dispatch('onTranscodeStart', $inFile, $preset, $outFilePath);
+
+			//run the transcode
+			$return = $adapter->transcodeFile($inFile, $outFilePath, $preset);
+
+			//validate return
+			if(!$return instanceof File) {
+				throw new Exception\InvalidOutputException("Adapters must return an instance of AC\Mutate\File, or throw an exception upon error.");
+			}
+
+			$preset->validateOutputFile($return);
+			$adapter->validateOutputFile($return);
+
+		} catch (\Exception $e) {
+			//clean up files after failure
+			$this->cleanFailedTranscode($outFilePath, $failMode);
+			
+			//notify listeners of failure
+			$this->dispatch('onTranscodeFailure', $inFile, $preset, $e);
+			
+			//re-throw exception so environment can handle appropriately
+			throw $e;
 		}
 		
-		//process returned file according to preset definition
-		$this->processReturnedFile($preset->getDefinition(), $return);
+		//notify listeners of completion
+		$this->dispatch('onTranscodeComplete', $return);
 		
+		//return new file
 		return $return;
 	}
 	
-	protected function processOutputFilepath(FileHandlerDefinition $def, $path, $overwrite) {
+	/**
+	 * Transcode a file with a specific adapter directly.  Internally builds a dynamic preset with the specified options.
+	 *
+	 * @param mixed $inFile - either string filepath or instance of \AC\Mutate\File
+	 * @param string $adapterName - string name of adapter to use
+	 * @param string $outFile - optional output file path, if not provided will be derived automatically by the Transcoder
+	 * @param string $options - key/val option hash to pass to adapter
+	 * @param string $conflictMode - flag for how to handle output file conflicts
+	 * @param string $failMode - flag for how to handle failed transcodes
+	 * @return \AC\Mutate\File
+	 */
+	public function transcodeWithAdapter($inFile, $adapterName, $outFile = false, $options = array(), $conflictMode = self::ONCONFLICT_INCREMENT, $failMode = self::ONFAIL_DELETE) {
+		//build a preset on the fly based on the options provided
+		$preset = new Preset('dynamic', $adapterName, $options);
+		return $this->transcodeWithPreset($inFile, $preset, $outFile, $conflictMode, $failMode);
+	}
+	
+	protected function processOutputFilepath(FileHandlerDefinition $outputDefinition, $outputPath, $conflictMode) {
 		//check for write permissions
-		$dir = is_dir($path) ? $path : dirname($path);
-		if(!is_writable($dir)) {
-			throw new Exception\FilePermissionException(sprintf("The output location (%s) is not writable by this process.", $path));
-		}
 		
 		//check for pre-existing file
-		if(file_exists($path) && !$overwrite) {
-			throw new Exception\FileAlreadyExistsException(sprintf("The file %s already exists, you must force the overwrite option to re-run the process.", $path));
-		} else if(file_exists($path)) {
-			//delete pre-existing file
-			unlink($path);
-		}
 		
-		//TODO: check for directory creation
+		//check for directory creation
+		
+		//check for conflict modes, generate modified path if necessary
+		
+		//throw exception if invalid
 		
 		return $string;
 	}
 	
-	protected function verifyAdapter(Adapter $adapter) {
-		if(!isset($this->verified[$adapter->getName()])) {
-			$return = $adapter->verifyEnvironment();
-			if(true !== $return) {
-				throw new AdapterException(sprintf("Adapter %s did not properly verify.", $adapter->getName()));
-			}
+	protected function cleanFailedTranscode($outputFilePath, $failMode) {
+		if(file_exists($outFilePath)) {
+			if($failMode === self::ONFAIL_DELETE) {
 
-			$this->verified[$adapter->getName()] = true;
+				//TODO: check for directories
+
+				@unlink($outFilePath);
+
+			}
 		}
-		
-		return true;
-	}
-	
-	protected function processReturnedFile(FileHandlerDefinition $def, File $file) {
-		//TODO: set proper permissions on files/directories
 	}
 		
 	public function transcodeWithJob($inFile, $job) {
+		
 		//TODO: implement
+		
+	}
+	
+	public function registerListener(EventListener $listener) {
+		$this->listeners[get_class($listener)] = $listener;
+		return $this;
+	}
+	
+	public function removeListener($className) {
+		if(isset($this->listeners[$className])) {
+			unset($this->listeners[$className]);
+		}
+		
+		return $this;
+	}
+	
+	public function hasListener($className) {
+		return isset($this->listeners[$className]);
+	}
+	
+	protected function dispatch() {
+		try {
+			$args = func_get_args();
+			$methodName = array_shift($args);
+		
+			//call all listeners
+			foreach($this->listeners as $listener) {
+				call_user_func_array(array($listener, $methodName), $args);
+			}
+		} catch (\Exception $e) {
+			//swallow exceptions thrown by listeners, they shouldn't interfere with the process, they are supposed to be passive observers
+			return true;
+		}
+		
+		return true;
 	}
 	
 	public function getAdapter($name) {
@@ -166,7 +282,6 @@ class Transcoder {
 	public function getPresets() {
 		return $this->presets;
 	}
-	
 	
 	public function getJob($name) {
 		if(!isset($this->jobs[$name])) {

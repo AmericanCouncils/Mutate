@@ -1,1 +1,1 @@
-API changes will be tracked here.
+Public method API changes will be tracked here once the project reaches 1.0.0-beta1 status.
