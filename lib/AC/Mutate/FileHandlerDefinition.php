@@ -1,4 +1,5 @@
 <?php
+
 namespace AC\Mutate;
 
 /**
@@ -6,13 +7,12 @@ namespace AC\Mutate;
  */
 class FileHandlerDefinition implements \Serializable {
 
-	//directory handling
+	//file/directory handling & creation (TODO: consider removing these and implementing this in Transcoder)
 	protected $fileCreationMode = 0644;
 	protected $directoryCreationMode = 0755;
-	protected $allowDirectory = false;
 	protected $allowDirectoryCreation = false;
 
-	//input restrictions
+	//input type restrictions
 	protected $allowedExtensions = false;
 	protected $rejectedExtensions = false;
 	protected $allowedMimes = false;
@@ -23,6 +23,7 @@ class FileHandlerDefinition implements \Serializable {
 	protected $rejectedMimeEncodings = false;
 
 	//general i/o type
+	protected $allowDirectory = false;
 	protected $requiredExtension = false;
 	protected $inheritExtension = true;
 	protected $requiredFileType = 'file';
@@ -84,7 +85,12 @@ class FileHandlerDefinition implements \Serializable {
 		return true;
 	}
 	
-
+	/**
+	 * Return true/false for whether or not the handler accepts a given extension.
+	 *
+	 * @param string $ext - string extension, if a preceeding "." is provided, it's automatically stripped 
+	 * @return boolean
+	 */
 	public function acceptsExtension($ext) {
 		$ext = trim(strtolower($ext), ".");
 		if($this->getAllowedExtensions() && !in_array($ext, $this->getAllowedExtensions())) {
@@ -98,6 +104,11 @@ class FileHandlerDefinition implements \Serializable {
 		return true;
 	}
 
+	/**
+	 * Return true/false for whether or not the handler accepts a given mime.
+	 *
+	 * @return boolean
+	 */
 	public function acceptsMime($ext) {
 		if($this->getAllowedMimes() && !in_array($ext, $this->getAllowedMimes())) {
 			return false;
@@ -110,6 +121,11 @@ class FileHandlerDefinition implements \Serializable {
 		return true;
 	}
 	
+	/**
+	 * Return true/false for whether or not the handler accepts a given mime type.
+	 *
+	 * @return boolean
+	 */
 	public function acceptsMimeType($ext) {
 		if($this->getAllowedMimeTypes() && !in_array($ext, $this->getAllowedMimeTypes())) {
 			return false;
@@ -122,6 +138,11 @@ class FileHandlerDefinition implements \Serializable {
 		return true;
 	}
 	
+	/**
+	 * Return true/false for whether or not the handler accepts a given mime encoding.
+	 *
+	 * @return boolean
+	 */
 	public function acceptsMimeEncoding($ext) {
 		if($this->getAllowedMimeEncodings() && !in_array($ext, $this->getAllowedMimeEncodings())) {
 			return false;
@@ -134,25 +155,69 @@ class FileHandlerDefinition implements \Serializable {
 		return true;
 	}
 	
-
+	/**
+	 * Set a specific required extension
+	 *
+	 * @param string $ext 
+	 * @return self
+	 */
+	public function setRequiredExtension($ext) {
+		$this->requiredExtension = ltrim(strtolower($ext), ".");
+		return $this;
+	}
+	
+	/**
+	 * Get required file extension
+	 *
+	 * @return string or false
+	 */
+	public function getRequiredExtension() {
+		return $this->requiredExtension;
+	}
+	
+	/**
+	 * Return true/false for whether or not the handler shoud inhert a file extension from another file.  Generally this is only used when checking
+	 * output file definitions and generating valid output file paths
+	 *
+	 * @return boolean
+	 */
 	public function getInheritExtension() {
 		return $this->inheritExtension;
 	}
 	
+	/**
+	 * Set true/false whether or not to inherit an output extension
+	 *
+	 * @param bool $bool 
+	 * @return self
+	 */
 	public function setInheritExtension($bool) {
 		$this->inheritExtension = (bool) $bool;
 		return $this;
 	}
 
+	/**
+	 * Return boolean for whether or not directories count as valid input
+	 *
+	 * @return boolean
+	 */
 	public function getAllowDirectory() {
 		return $this->allowDirectory;
 	}
 	
+	/**
+	 * Set true/false whether or not to allow directories as input
+	 *
+	 * @param bool $bool 
+	 * @return self
+	 */
 	public function setAllowDirectory($bool) {
 		$this->allowDirectory = (bool) $bool;
 		return $this;
 	}
 	
+//TODO: CONSIDER REMOVING BELOW HERE - these decisions could be implemented in the Transcoder with defaults, like the conflict/fail modes
+
 	public function getAllowDirectoryCreation() {
 		return $this->allowDirectoryCreation;
 	}
@@ -174,16 +239,29 @@ class FileHandlerDefinition implements \Serializable {
 	public function getFileCreationMode() {
 		return $this->fileCreationMode;
 	}
-		
+
 	public function setFileCreationMode($num) {
 		$this->fileCreationMode = $num;
 		return $this;
 	}
 	
+//TODO: CONSIDER REMOVING ABOVE HERE
+	
+	/**
+	 * Get required input file type, can be either 'file' or 'directory'
+	 *
+	 * @return string
+	 */
 	public function getRequiredFileType() {
 		return $this->requiredFileType;
 	}
 	
+	/**
+	 * Set required file input type, must be either 'file' or 'directory'
+	 *
+	 * @param string $type 
+	 * @return self
+	 */
 	public function setRequiredFileType($type) {
 		if(!in_array($type, array('file','directory'))) {
 			throw new \InvalidArgumentException("Input type must be either 'file' or 'directory'.");
@@ -200,7 +278,7 @@ class FileHandlerDefinition implements \Serializable {
 	}
 		
 	/**
-	 *  type restriction methods below
+	 *  type restriction getter/setter methods below
 	 */
 
 	public function getAllowedExtensions() {

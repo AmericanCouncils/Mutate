@@ -25,6 +25,20 @@ class Preset implements \ArrayAccess, \Serializable {
 	protected $description = "No description provided.";
 	
 	/**
+	 * FileHandlerDefinition instance built during __construct(); that describes input file restrictions.
+	 *
+	 * @var \AC\Mutate\FileHandlerDefinition
+	 */
+	protected $inputDefinition = false;
+	
+	/**
+	 * FileHandlerDefinition instance built during __construct(); that describes output file restrictions.
+	 *
+	 * @var \AC\Mutate\FileHandlerDefinition
+	 */
+	protected $outputDefinition = false;
+	
+	/**
 	 * Boolean for whether or not the preset is locked.  If locked, options cannot be modified, only read
 	 *
 	 * @var boolean
@@ -71,6 +85,42 @@ class Preset implements \ArrayAccess, \Serializable {
 		if(!$this->requiredAdapter) {
 			throw new Exception\InvalidPresetException("Presets must declared their required adapter.");
 		}
+		
+		if(!$this->inputDefinition) {
+			throw new Exception\InvalidPresetException("Missing input FileDefinitionHandler, did you forget to return it from Preset::buildInputDefinition() ?");
+		}
+
+		if(!$this->outputDefinition) {
+			throw new Exception\InvalidPresetException("Missing output FileDefinitionHandler, did you forget to return it from Preset::buildOutputDefinition() ?");
+		}
+	}
+	
+	/**
+	 * Return string name of this preset.
+	 *
+	 * @return string
+	 * @author Evan Villemez
+	 */
+	public function getName() {
+		return $this->name;
+	}
+	
+	/**
+	 * Return string name of required adapter
+	 *
+	 * @return string
+	 */
+	public function getRequiredAdapter() {
+		return $this->requiredAdapter;
+	}
+	
+	/**
+	 * Return string human-readable description of what this preset does.
+	 *
+	 * @return string
+	 */
+	public function getDescription() {
+		return $this->description;
 	}
 	
 	/**
@@ -78,8 +128,7 @@ class Preset implements \ArrayAccess, \Serializable {
 	 *
 	 * @return void
 	 */
-	protected function configure() {
-	}
+	protected function configure() {}
 	
 	/**
 	 * Meant to be overriden in extending preset classes.  The default FileHandlerDefinition will accept files of any format.
@@ -120,25 +169,79 @@ class Preset implements \ArrayAccess, \Serializable {
 	}
 
 	/**
-	 * Returns suggest string output path, given a user provided path and input file.
+	 * Uses input FileHandlerDefinition to accepts given file. Throws exceptions on failure.
 	 *
-	 * @param File $inFile 
-	 * @param string $outputPath 
-	 * @return string
+	 * @param File $file 
+	 * @return true
 	 */
-	public function assembleOutputPath(File $inFile, $outputPath = false) {
-		//TODO: implement
+	public function acceptsInputFile(File $file) {
+		return $this->getInputDefinition()->acceptsFile($file);
+	}
+
+	/**
+	 * Uses output FileHandlerDefinition to accepts given file. Throws exceptions on failure.
+	 *
+	 * @param File $file 
+	 * @return true
+	 */
+	public function acceptsOutputFile(File $file) {
+		return $this->getOutputDefinition()->acceptsFile($file);
 	}
 	
 	/**
-	 * Return string name of required adapter
+	 * Returns suggest string output path, given a user provided path and input file.
+	 *
+	 * @param File $inFile 
+	 * @param string $outputPath, or default to false
+	 * @return string
+	 */
+	public function generateOutputPath(File $inFile, $outputPath = false) {
+		//if we have a path
+		if(is_string($outputPath)) {
+			//if that path is a directory
+			if(is_dir($outputPath)) {
+				
+			} else {
+				//otherwise
+			
+			}
+		}
+		
+		//if we don't have an output path...
+		if(!$outputPath) {
+			//check definition required types
+			//inherit path from input file
+		}
+		//else if has extension:
+			//
+		
+		//TODO: implement, use $this->resolveOutputExtension as needed
+		return $outputFilePath;
+	}
+	
+	/**
+	 * Resolves the output extension based on the input file.  If it cannot be determined, will call Preset::getOutputExtension, which must
+	 * be implemented by an extending class, otherwise exceptions are thrown.
+	 *
+	 * @param File $inFile 
+	 * @return string
+	 */
+	protected function resolveOutputExtension(File $inFile) {
+		if(!$inFile->isDir()) {
+			//TODO: implement, use $this->getOutputExtension() as necessary			
+		}
+	}
+	
+	/**
+	 * Method for determining the output extension based on data from the preset.  This must be implemented
+	 * by an extending class, and is only called if the output extension can't be determined any other way.
 	 *
 	 * @return string
 	 */
-	public function getRequiredAdapter() {
-		return $this->requiredAdapter;
+	protected function getOutputExtension() {
+		throw new Exception\InvalidPresetException(__METHOD__." must be implemented by an extending class to properly determine the required output extension.");
 	}
-	
+		
 	/**
 	 * Return input FileHandlerDefinition
 	 *
@@ -191,7 +294,7 @@ class Preset implements \ArrayAccess, \Serializable {
 	 * @param array $ops
 	 * @return self
 	 */
-	protected function setOptions(array $ops) {
+	public function setOptions(array $ops) {
 		$this->options = $ops;
 		return $this;
 	}
@@ -199,7 +302,7 @@ class Preset implements \ArrayAccess, \Serializable {
 	/**
 	 * Sets 'locked' property to true, so that no new options can be set or removed.
 	 */
-	protected function lock() {
+	public function lock() {
 		$this->locked = true;
 	}
 

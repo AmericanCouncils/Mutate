@@ -45,18 +45,21 @@ abstract class Adapter {
 	
 	public function validateInputFile(File $file) {
 		$this->getInputDefinition()->validateFile($file);
-		
-		//anything else?
-		
 		return true;
 	}
 	
 	public function validateOutputFile(File $file) {
 		$this->getOutputDefinition()->validateFile($file);
-		
-		//anything else?
-		
+
 		return true;
+	}
+	
+	public function acceptsInputFile(File $file) {
+		return $this->getInputDefinition()->acceptsFile($file);
+	}
+
+	public function acceptsOutputFile(File $file) {
+		return $this->getOutputDefinition()->acceptsFile($file);
 	}
 
 	public function verify() {
@@ -65,7 +68,7 @@ abstract class Adapter {
 				$this->verified = (bool) $this->verifyEnvironment();
 			} catch (\Exception $e) {
 				$this->verificationError = $e->getMessage();
-				return false;
+				$this->verified = false;
 			}
 		}
 		
