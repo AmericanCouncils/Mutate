@@ -3,15 +3,16 @@
 namespace AC\Mutate;
 
 class Preset implements \ArrayAccess, \Serializable {
+
 	/**
-	 * A human-readable string name for the preset.
+	 * A machine-key string name for the preset.  Should be lower-cased with underscores.
 	 *
 	 * @var string
 	 */
 	protected $name = false;
 	
 	/**
-	 * A string name of the required adapter for this preset.  The string should match the string returned from Adapter::getname() in the adapter required by this preset
+	 * A string name of the required adapter for this preset.  The string should match the string returned from Adapter::getName() in the adapter required by this preset
 	 *
 	 * @var string
 	 */
@@ -261,8 +262,12 @@ class Preset implements \ArrayAccess, \Serializable {
 					
 					//get proper output extension
 					$outputExtension = $this->resolveOutputExtension($inFile);
-				
-					return $outputPath.DIRECTORY_SEPARATOR.$baseName.".".$outputExtension;
+					
+					//if the output directory contains the input file, we should infix the preset name of the output file
+					$contains = file_exists($outputPath.DIRECTORY_SEPARATOR.$inFile->getFilename());
+					return $contains ? 
+						$outputPath.DIRECTORY_SEPARATOR.$baseName.".".$this->getName().".".$outputExtension :
+						$outputPath.DIRECTORY_SEPARATOR.$baseName.".".$outputExtension;
 				}
 			}
 		}

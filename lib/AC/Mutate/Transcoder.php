@@ -86,7 +86,7 @@ class Transcoder {
 	protected $jobs = array();
 	
 	/**
-	 * Array of registered TranscoderEventListeners
+	 * Array of registered TranscodeEventListeners
 	 *
 	 * @var array
 	 */
@@ -101,7 +101,7 @@ class Transcoder {
 	 * @param string $outFile - an optional output file path, even if provided explicity, the Transcoder will validate and process it before starting a transcode process
 	 * @param string $conflictMode - flag for what to do if an output file already exists at the given output path
 	 * @param string $failMode - flag for what to do with the output file(s) on a failed transcode
-	 * @return void - \AC\Mutate\File instance for newly created file
+	 * @return File - \AC\Mutate\File instance for newly created file
 	 */
 	public function transcodeWithPreset($inFile, $preset, $outFile = false, $conflictMode = self::ONCONFLICT_INCREMENT, $dirMode = self::ONDIR_EXCEPTION, $failMode = self::ONFAIL_DELETE) {
 
@@ -154,7 +154,7 @@ class Transcoder {
 			$this->cleanOutputFile($return);
 
 			//notify listeners of completion
-			$this->dispatch('onTranscodeComplete', $return);
+			$this->dispatch('onTranscodeComplete', $inFile, $preset, $return);
 		
 			//return newly created file
 			return $return;
@@ -163,7 +163,7 @@ class Transcoder {
 			$this->cleanFailedTranscode($adapter, $outFilePath, $failMode);
 			
 			//notify listeners of failure
-			$this->dispatch('onTranscodeFailure', $inFile, $preset, $e);
+			$this->dispatch('onTranscodeFailure', $inFile, $preset, $outFilePath, $e);
 			
 			//re-throw exception so environment can handle appropriately
 			throw $e;
@@ -189,7 +189,11 @@ class Transcoder {
 	
 	public function transcodeWithJob($inFile, $job, $conflictMode = self::ONCONFLICT_INCREMENT, $dirMode = self::ONDIR_CREATE, $failMode = self::ONFAIL_DELETE) {
 		
-		//TODO: implement
+		if(!$job instanceof Job) {
+			$job = $this->getJob($job);
+		}
+
+		//TODO: implement once the job-related APIs are defined
 		throw new \RuntimeException(__METHOD__." not yet implemented.");
 		
 	}
@@ -308,7 +312,7 @@ class Transcoder {
 		$adapter->cleanFailedTranscode($outputFilePath);
 	}
 		
-	public function registerListener(EventListener $listener) {
+	public function registerListener(TranscodeEventListener $listener) {
 		$this->listeners[get_class($listener)] = $listener;
 		return $this;
 	}
