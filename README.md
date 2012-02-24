@@ -2,6 +2,38 @@
 
 Mutate is a file transcoding tool abstraction library.  It provides a common interface for tools which transcode files from one format to another.  Several tools (and common presets that use them) are provided with the library, but others can be registered or defined on the fly from your own code.
 
+*This library is under heavy development.  APIs are subject to change without notice until the version reaches 1.0.0-alpha.1.*
+
+## Contributing ##
+
+Contributers are certainly welcome.  This library is being worked on as part of a specific project, though we want to make it available as a standalone component because we think it could have value for the community at large.  That said, if you would like to help, feel free to fork, modify, and submit pull requests.  But before spending too much time on it, please get in contact with Evan Villemez (see `composer.json` for contact info) to avoid any duplication of effort!
+
+## Current status ##
+
+We'll keep brief updates here to help people avoid duplication of effort.  You can see a more detailed TODO list and roadmap at the end of this document.
+
+### Commands ###
+
+Currently only 2 application commands work: `status` and `transcode`.  The others are under development, or will remain as placeholders until the Job related APIs are finalized.
+
+### Adapters/Presets ###
+
+Only one is provided right now, and it's just a proof-of-concept to demonstrate end-to-end usage of the library.  The biggest current task is to get adapters and presets implemented for popular tools.
+
+### Active tasks ###
+
+Evan is working on the core library and the commands that use it.
+
+Jay is working specifically on Handbrake and its presets at the moment.
+
+*What we need:*
+* FFmpeg adapters / presets
+* ImageMagick adapter(s) / presets
+	* Note, since ImageMagick actually has a native PHP api, it probably makes most since to have several "adapters" geared towards certain tasks that can be easily parameterized. Such as:
+		* ImageFormatConversionAdapter
+		* ImageEffectsAdapter
+* Other tools, suggestions?
+
 # Installation #
 
 If you are using the library as a component in another framework or plugin, then there isn't much to set up.  The Mutate code is organized according to [PSR-0](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md) standards, so its namespace (`AC\Mutate`) can be registered however you handle autoloading in your framework of choice.
@@ -240,11 +272,11 @@ A `Job` is a complex grouping of presets which perform multiple transcoding acti
 
 # Changes and Versioning #
 
-We increment versions following the [Semantic Versioning](http://semver.org/) specification.  
+We increment versions following the [Semantic Versioning](http://semver.org/) specification.
 
 Important public API changes will be tracked in the *CHANGELOG.md* file once the project reaches `1.0.0-alpha.1` status.  Until that point, major API changes could happen at any time, so you'll have to look at the code documentation, or the README docs (which may or may not be up-to-date, but should be).
 
-# Version Roadmap #
+## Version Roadmap ##
 
 * 0.6.0                - you are here
 * For 0.7.0            - implement commands which don't utilize jobs
@@ -255,20 +287,29 @@ Important public API changes will be tracked in the *CHANGELOG.md* file once the
 
 # Todo List #
 
-We will keep track of where we are in regards to specific tasks here.  This library is still in the early stages of development, so everything documented in this file is subject to change.
+We will keep track of where we are in regards to specific tasks here.
 
 Todo list:
 
+* Change references from "name" to "key" instead
+	* Adapter::getName => Adapter::getKey
+	* Preset::getName => Preset::getKey
+	* `getName` methods should return human-readable name if present, if not return key
+* Implement simple mock objects in Tests/Mock directory for easier Adapter/Transcoder testing
 * Unit test and document Adapter
 * Unit test and document Transcoder
 * Commands:
-	* Add conflict flag options to transcode commands
+	* Add conflict/mode flag options to transcode commands
+	* Implement all non-job related commands
 	* Transcode commands should return full file paths to console upon success
 	* Batch transcode commands
 		* `transcode:batch [pattern]`
 		* `transcode:batch:adapter [pattern]`
 		* `transcode:batch:job [pattern]`
 	* `finfo` - display all available file info for a given path
+	* `preset:show key` - display info for preset
+	* `adapter:show key` - display info for adapter
+	* `job:show key` - display info for adapter
 * Implement jobs
 	* Allow chained presets on one output file
 	* Allow creation of multiple output files
@@ -279,8 +320,5 @@ Todo list:
 	* FFmpeg
 	* mencoder (?)
 	* various ImageMagick adapters
+	* GD2 adapters?  Maybe make presets for these tools interchangeable?
 * Implement common presets for above adapters
-
-# Contributing #
-
-Contributers are certainly welcome.  This library is being worked on as part of a specific project, though we want to make it available as a standalone component because we think it could have value for the community at large.  That said, if you would like to help, feel free to fork, modify, and submit pull requests.  But before spending too much time on it, please get in contact with Evan Villemez (see `composer.json` for contact info) to avoid any duplication of effort!

@@ -22,6 +22,9 @@ class TextToLowerCase extends Preset {
 		));
 	}
 	
+	/**
+	 * Output should be a file.
+	 */
 	protected function buildOutputDefinition() {
 		return new FileHandlerDefinition(array(
 			'requiredType' => 'file',
