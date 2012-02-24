@@ -17,6 +17,6 @@ class BatchTranscodeWithJob extends Command {
 	}
 	
     protected function execute(InputInterface $input, OutputInterface $output) {
-		
+		throw new \RuntimeException("Command not yet implemented.");
 	}
 }

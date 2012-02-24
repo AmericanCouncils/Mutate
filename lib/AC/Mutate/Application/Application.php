@@ -91,7 +91,7 @@ class Application extends BaseApplication {
 		$items = array();
 
 		foreach(scandir(__DIR__."/../Adapters") as $item) {
-			if('.php' === substr($item, 0, -4)) {
+			if(strpos($item, '.php')) {
 				$class = substr("AC\\Mutate\\Adapters\\".$item, 0, -4); //get rid of ".php"
 				$items[] = new $class;
 			}
@@ -109,7 +109,7 @@ class Application extends BaseApplication {
 		$items = array();
 
 		foreach(scandir(__DIR__."/../Presets") as $item) {
-			if('.php' === substr($item, 0, -4)) {
+			if(strpos($item, '.php')) {
 				$class = substr("AC\\Mutate\\Presets\\".$item, 0, -4); //get rid of ".php"
 				$items[] = new $class;
 			}
@@ -127,7 +127,7 @@ class Application extends BaseApplication {
 		$items = array();
 
 		foreach(scandir(__DIR__."/../Jobs") as $item) {
-			if('.php' === substr($item, 0, -4)) {
+			if(strpos($item, '.php')) {
 				$class = substr("AC\\Mutate\\Jobs\\".$item, 0, -4); //get rid of ".php"
 				$items[] = new $class;
 			}

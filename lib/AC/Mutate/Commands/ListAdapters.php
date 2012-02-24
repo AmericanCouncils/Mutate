@@ -13,6 +13,7 @@ class ListAdapters extends Command {
 	protected $description = "Lists registered adapters by their name and class.";
 	
     protected function execute(InputInterface $input, OutputInterface $output) {
+		throw new \RuntimeException("Command not yet implemented.");
 		
 	}
 }

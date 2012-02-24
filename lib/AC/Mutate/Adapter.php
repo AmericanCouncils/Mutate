@@ -39,6 +39,10 @@ abstract class Adapter {
 		throw new \RuntimeException("Adapter::transcodeFile must be implemented by an extending class.");
 	}
 	
+	public function cleanFailedTranscode($outFilePath) {
+		
+	}
+	
 	public function validatePreset(Preset $preset) {
 		return true;
 	}
@@ -66,6 +70,9 @@ abstract class Adapter {
 		if(is_null($this->verified)) {
 			try {
 				$this->verified = (bool) $this->verifyEnvironment();
+				if(!$this->verified) {
+					throw new Exception\EnvironmentException("The adapter could not properly validate its environment.");
+				}
 			} catch (\Exception $e) {
 				$this->verificationError = $e->getMessage();
 				$this->verified = false;

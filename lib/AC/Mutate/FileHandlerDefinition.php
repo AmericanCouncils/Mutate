@@ -7,11 +7,6 @@ namespace AC\Mutate;
  */
 class FileHandlerDefinition implements \Serializable {
 
-	//file/directory handling & creation (TODO: consider removing these and implementing this in Transcoder)
-	protected $fileCreationMode = 0644;
-	protected $directoryCreationMode = 0755;
-	protected $allowDirectoryCreation = false;
-
 	//input type restrictions
 	protected $allowedExtensions = false;
 	protected $rejectedExtensions = false;
@@ -23,15 +18,15 @@ class FileHandlerDefinition implements \Serializable {
 	protected $rejectedMimeEncodings = false;
 
 	//general i/o type
-	protected $allowDirectory = false;
+	protected $allowDirectory = true;
 	protected $requiredExtension = false;
 	protected $inheritExtension = true;
-	protected $requiredFileType = 'file';
+	protected $requiredType = false;
 	
 	/**
 	 * Optionally set any properties via a hash in the constructor instead of using setter methods
 	 *
-	 * @param string $ops 
+	 * @param array $ops - optional key/val hash
 	 */
 	public function __construct($ops = array()) {
 		$this->setOptions($ops);
@@ -74,14 +69,16 @@ class FileHandlerDefinition implements \Serializable {
 			throw new Exception\InvalidFileException(sprintf("This definition does not accept files with mime encoding of %s", $file->getMimeEncoding()));
 		}
 		
-		if((!$this->allowDirectory && $file->isDir()) || ($this->requiredFileType === 'directory' && !$file->isDir())) {
+		if($this->getRequiredType()) {
+			if($this->getRequiredType() !== $file->getType()) {
+				throw new Exception\InvalidFileException(sprintf("This definition only accept files of type %s", $this->getRequiredType()));
+			}
+		}
+		
+		if(!$this->getAllowDirectory() && $file->isDir()) {
 			throw new Exception\InvalidFileException("This definition cannot accept a directory as input");
 		}
 		
-		if(!$file->isDir() && $this->requiredFileType === 'directory') {
-			throw new Exception\InvalidFileException("This definition only accepts a directories as input");
-		}
-
 		return true;
 	}
 	
@@ -93,6 +90,11 @@ class FileHandlerDefinition implements \Serializable {
 	 */
 	public function acceptsExtension($ext) {
 		$ext = trim(strtolower($ext), ".");
+		
+		if($this->getRequiredExtension() && $ext !== $this->getRequiredExtension()) {
+			return false;
+		}
+		
 		if($this->getAllowedExtensions() && !in_array($ext, $this->getAllowedExtensions())) {
 			return false;
 		}
@@ -186,7 +188,7 @@ class FileHandlerDefinition implements \Serializable {
 	}
 	
 	/**
-	 * Set true/false whether or not to inherit an output extension
+	 * Set true/false whether or not to inherit an output extension, only used for output definitions to help in generating a valid output path
 	 *
 	 * @param bool $bool 
 	 * @return self
@@ -216,44 +218,13 @@ class FileHandlerDefinition implements \Serializable {
 		return $this;
 	}
 	
-//TODO: CONSIDER REMOVING BELOW HERE - these decisions could be implemented in the Transcoder with defaults, like the conflict/fail modes
-
-	public function getAllowDirectoryCreation() {
-		return $this->allowDirectoryCreation;
-	}
-
-	public function setAllowDirectoryCreation($bool) {
-		$this->allowDirectoryCreation = (bool) $bool;
-		return $this;
-	}
-
-	public function getDirectoryCreationMode() {
-		return $this->directoryCreationMode;
-	}
-
-	public function setDirectoryCreationMode($num) {
-		$this->directoryCreationMode = $num;
-		return $this;
-	}
-
-	public function getFileCreationMode() {
-		return $this->fileCreationMode;
-	}
-
-	public function setFileCreationMode($num) {
-		$this->fileCreationMode = $num;
-		return $this;
-	}
-	
-//TODO: CONSIDER REMOVING ABOVE HERE
-	
 	/**
 	 * Get required input file type, can be either 'file' or 'directory'
 	 *
 	 * @return string
 	 */
-	public function getRequiredFileType() {
-		return $this->requiredFileType;
+	public function getRequiredType() {
+		return $this->requiredType;
 	}
 	
 	/**
@@ -262,8 +233,8 @@ class FileHandlerDefinition implements \Serializable {
 	 * @param string $type 
 	 * @return self
 	 */
-	public function setRequiredFileType($type) {
-		if(!in_array($type, array('file','directory'))) {
+	public function setRequiredType($type) {
+		if(!in_array($type, array('file', 'directory'))) {
 			throw new \InvalidArgumentException("Input type must be either 'file' or 'directory'.");
 		}
 		
@@ -273,7 +244,7 @@ class FileHandlerDefinition implements \Serializable {
 			$this->setAllowDirectory(false);
 		}
 
-		$this->requiredFileType = $type;
+		$this->requiredType = $type;
 		return $this;
 	}
 		

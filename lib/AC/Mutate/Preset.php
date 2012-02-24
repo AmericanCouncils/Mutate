@@ -189,34 +189,114 @@ class Preset implements \ArrayAccess, \Serializable {
 	}
 	
 	/**
-	 * Returns suggest string output path, given a user provided path and input file.
+	 * Returns suggested string absolute output path, given a user provided path and input file.
 	 *
 	 * @param File $inFile 
-	 * @param string $outputPath, or default to false
+	 * @param string $outputPath - optionally provided output path, or default to false
 	 * @return string
 	 */
 	public function generateOutputPath(File $inFile, $outputPath = false) {
-		//if we have a path
+		//define path to input directory
+		$inputDirectory = rtrim($inFile->isDir() ? $inFile->getRealPath() : dirname($inFile->getRealPath()), DIRECTORY_SEPARATOR);
+		
+		//trim output path
+		if($outputPath) {
+			$outputPath = rtrim($outputPath, DIRECTORY_SEPARATOR);
+		}
+		
+		//if a path was provided by the user, make sure it's relatively valid
 		if(is_string($outputPath)) {
-			//if that path is a directory
-			if(is_dir($outputPath)) {
+			//if directory output is required
+			if($this->getOutputDefinition()->getRequiredType() === 'directory') {				
+				//output path should not contain an extension if the output is supposed to be a directory
+				$exp = explode(DIRECTORY_SEPARATOR, $outputPath);
+				$name = end($exp);
+				$exp = $this->safeExplodeFileName($name);
+				if(count($exp) >= 2) {
+					throw new Exception\InvalidInputException(sprintf("Output for this preset is required to be a directory, the output path should not contain a file extension."));
+				}
 				
-			} else {
-				//otherwise
-			
+				//otherwise it must be valid, so return
+				return $outputPath;
+			}
+
+			//if output can be a file, make sure the path acceptable by the output definition
+			else {
+				//check for a file extension provided
+				$exp = explode(DIRECTORY_SEPARATOR, $outputPath);
+				$name = end($exp);
+				$exp = $this->safeExplodeFileName($name);
+				
+				//we assume a valid file extension
+				if(count($exp) >= 2) {
+					//if contains an extension, is it valid?
+					$givenExtension = strtolower(array_pop($exp));
+					$inputExtension = strtolower($inFile->getExtension());
+					$baseName = implode(".", $exp);
+					
+					//should it inherit the extension?  if so does it match?
+					if($this->getOutputDefinition()->getInheritExtension() && ($givenExtension !== $inputExtension)) {
+						throw new Exception\InvalidInputException(sprintf("The output extension for this preset must match the extension of the input file."));
+					}
+					
+					//does the output definition generally accept the given extension?
+					if(!$this->getOutputDefinition()->acceptsExtension($givenExtension)) {
+						throw new Exception\InvalidInputException(sprintf("The requested preset cannot output files with extension [%s]", $givenExtension));
+					}
+					
+					//provided path must be valid enough, so return it
+					return $outputPath;
+				}
+				
+				//otherwise we assume we've been given a directory to put the file in
+				else {
+					//generate a default name, append to provided directory, try resolving a valid output extension
+
+					//get input filename without it's extension
+					$exp = explode(".", $inFile->getFilename());
+					if(count($exp) >= 2) {
+						array_pop($exp);
+					}
+					$baseName = implode(".", $exp);
+					
+					//get proper output extension
+					$outputExtension = $this->resolveOutputExtension($inFile);
+				
+					return $outputPath.DIRECTORY_SEPARATOR.$baseName.".".$this->getName().".".$outputExtension;
+				}
 			}
 		}
-		
-		//if we don't have an output path...
-		if(!$outputPath) {
-			//check definition required types
-			//inherit path from input file
+
+		//otherwise, if no path was provided
+		else {
+			//check output definition for required types
+			if($this->getOutputDefinition()->getRequiredType() === 'directory') {
+				//default to creating directory named by preset
+				return $inputDirectory.DIRECTORY_SEPARATOR.$this->getName();
+			} else {
+				//otherwise default to creating new file path with format infileName.presetName.required_or_inheritedExtension
+				$outputExtension = $this->resolveOutputExtension($inFile);
+				
+				//get input filename without it's extension
+				$exp = explode(".", $inFile->getFilename());
+				if(count($exp) >= 2) {
+					array_pop($exp);
+				}
+				$baseName = implode(".", $exp);
+				
+				return $inputDirectory.DIRECTORY_SEPARATOR.$baseName.".".$this->getName().".".$outputExtension;
+			}
 		}
-		//else if has extension:
-			//
+
+		return false;
+	}
+	
+	protected function safeExplodeFileName($fileName) {
+		if(!in_array($fileName, array('.', '..'))) {
+			return explode(".", $fileName);
+		}
 		
-		//TODO: implement, use $this->resolveOutputExtension as needed
-		return $outputFilePath;
+		return array($fileName);
 	}
 	
 	/**
@@ -227,9 +307,16 @@ class Preset implements \ArrayAccess, \Serializable {
 	 * @return string
 	 */
 	protected function resolveOutputExtension(File $inFile) {
-		if(!$inFile->isDir()) {
-			//TODO: implement, use $this->getOutputExtension() as necessary			
+		$outDef = $this->getOutputDefinition();
+		if($outDef->getRequiredExtension()) {
+			return $outDef->getRequiredExtension();
 		}
+		
+		if($outDef->getInheritExtension()) {
+			return $inFile->getExtension();
+		}
+		
+		return $this->getOutputExtension();
 	}
 	
 	/**
@@ -406,5 +493,5 @@ class Preset implements \ArrayAccess, \Serializable {
 		foreach($data as $key => $val) {
 			$this->$key = $val;
 		}
-	}	
+	}
 }

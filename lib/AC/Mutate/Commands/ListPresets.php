@@ -13,6 +13,7 @@ class ListPresets extends Command {
 	protected $description = "Lists registered presets by their name and class, organized by adapter.";
 	
     protected function execute(InputInterface $input, OutputInterface $output) {
+		throw new \RuntimeException("Command not yet implemented.");
 		
 	}
 }

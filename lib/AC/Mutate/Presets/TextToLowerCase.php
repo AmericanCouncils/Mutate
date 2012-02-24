@@ -9,7 +9,7 @@ use AC\Mutate\FileHandlerDefinition;
  */
 class TextToLowerCase extends Preset {
 	protected $name = "text_to_lower";
-	protected $adapter = 'php_text';
+	protected $requiredAdapter = 'php_text';
 	protected $description = "Transforms all text in a file into lower case.  This will be deleted once we have real presets that do useful things.";
 	
 	/**
@@ -17,7 +17,14 @@ class TextToLowerCase extends Preset {
 	 */
 	protected function buildInputDefinition() {
 		return new FileHandlerDefinition(array(
-			'allowedMimeEncodings' => array('us-ascii', 'utf-8')
+			'allowedMimeEncodings' => array('us-ascii', 'utf-8'),
+			'requiredType' => 'file',
+		));
+	}
+	
+	protected function buildOutputDefinition() {
+		return new FileHandlerDefinition(array(
+			'requiredType' => 'file',
 		));
 	}
 	
@@ -29,4 +36,5 @@ class TextToLowerCase extends Preset {
 			'func' => 'strtolower'
 		));
 	}
+	
 }
