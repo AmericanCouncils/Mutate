@@ -4,7 +4,6 @@
     "description": "File transcoding library.",
     "keywords": ["file","convert", "transcode"],
     "homepage": "http://github.com/americancouncils/mutate",
-    "version": "1.0.0 alpha1",
     "license": "MIT",
     "authors": [
         {
@@ -17,10 +16,10 @@
     ],
     "require": {
         "php": ">=5.3.2",
-		"symfony/console": "2.*",
-		"symfony/process": "2.*",
-		"symfony/finder": "2.*",
-		"symfony/class-loader": "2.*"
+		"symfony/console": "master-dev",
+		"symfony/process": "master-dev",
+		"symfony/finder": "master-dev",
+		"symfony/class-loader": "master-dev"
     },
     "autoload": {
         "psr-0": { "AC\\Mutate": "lib/" }

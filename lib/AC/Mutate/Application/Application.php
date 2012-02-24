@@ -16,7 +16,7 @@ class Application extends BaseApplication {
 	private $transcoder = false;
 	
 	public function __construct() {
-		parent::__construct("Mutate File Transcoder", "1.0.0 alpha1");
+		parent::__construct("Mutate File Transcoder", "1.0.0-alpha1");
 		
 		//build transcoder
 		$this->transcoder = $this->buildTranscoder();
