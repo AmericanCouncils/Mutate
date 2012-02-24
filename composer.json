@@ -4,7 +4,6 @@
     "description": "File transcoding library.",
     "keywords": ["file","convert", "transcode"],
     "homepage": "http://github.com/americancouncils/mutate",
-    "version": "1.0.0 alpha1",
     "license": "MIT",
     "authors": [
         {
