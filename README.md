@@ -4,7 +4,7 @@ Mutate is a file transcoding tool abstraction library.  It provides a common int
 
 # Installation #
 
-If you are using the library as a component in another framework or plugin, then there isn't much to set up.  The Mutate code is organized according to PSR-0 standards, so its namespace (`AC\Mutate`) can be registered however you handle autoloading in your framework of choice.
+If you are using the library as a component in another framework or plugin, then there isn't much to set up.  The Mutate code is organized according to [PSR-0](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md) standards, so its namespace (`AC\Mutate`) can be registered however you handle autoloading in your framework of choice.
 
 On the other hand, if you want to use Mutate as a stand-alone application for transcoding files via the command-line, some dependencies are required.  You can easily install these dependencies by running the install script included in `/bin` or manually running [Composer](http://packagist.org/) from the Mutate root.  See below:
 		
@@ -35,9 +35,9 @@ To see which presets/adapters provided with the library are usable on your syste
 
 Also, if you want to make usage of the `mutate` command available from anywhere, you can symlink the `bin/mutate` script into anywhere on your include path, such as `/usr/bin`.
 
-# Basic Usage #
+# Basic Standalone Usage #
 
-The library is meant to be plugged into, and extended by, other libraries and frameworks.  However, it can also be used as is.  In order for all of the default presets and adapters to work, however, your system must have `ffmpeg`, `handbrake`, and `imagemagick` installed.  Their installation won't be covered in this documentation (yet, in the future we'll have documentation about these technologies on the github wiki).
+The library is meant to be plugged into, and extended by, other libraries and frameworks.  However, it can also be used as is.  In order for all of the default presets and adapters to work, however, your system must have `ffmpeg`, `handbrake`, and `imagemagick` installed.  Their installation won't be covered in this documentation (in the future we'll have documentation about these and other relevant technologies on the github wiki).
 
 To simply transcode a file from one format to another, given a preset, you can use the *mutate* script found in the `/bin` directory.
 
@@ -51,6 +51,26 @@ To simply transcode a file from one format to another, given a preset, you can u
 	
 	# run a transcode job (a grouping of multiple presets)
 	$> php bin/mutate transcode:job /path/to/test/uploaded.wmv html5
+	
+## Not-quite-standalone Usage ##
+
+The lines in the example above invoke the stand-alone app, which runs commands that use the Transcoder.  You can use the Transcoder by its self in your own code, which is detailed in the following the sections.  However, you can also use the stand-alone app in your own code if need-be.  When run in the manner described in the next code example, exceptions will not be caught - it's up to your code to handle them properly.
+
+	//instantiate it, which will automatically register the presets/adapters/jobs provided with the library
+	$app = new \AC\Mutate\Application\Application;
+	
+	//run the command as if it were being run directly from the command line
+	$status = $app->runCommand(sprintf("transcode %s %s %s", $inFilePath, $presetName, $outFilePath));
+
+	//get the output buffer, which in this case is a simple array of logged messages
+	$output = $app->getOutput();
+	
+	//your transcoded file
+	$file = new \SplFileObject($outFilePath);
+	
+	//alternatively, you could get the Transcoder created by the Application directly:
+	$transcoder = $app->getTranscoder();
+	$transcoder->transcodeWithPreset(/* options */);
 
 # Implementation Details & Example Usage #
 
@@ -66,11 +86,11 @@ The core Mutate library consists of several parts.
 
 4. Fourth are `Files` which is a thin extension of PHP's standard `SplFileObject` class.  These, in conjunction with `Preset` instances, are what `Adapters` take as input.  If the `Adapter` returns a file, it should also be an instance of `AC\Mutate\File`.
 
-5. Fifth are `FileHandlerDefinition` instances.  These can be specified by Adapters, as well as Presets, and define what types of files are allowed as both input and output.  These instances are used internally by the `Transcoder` to ensure valid input/output and to assist in building a valid output file path if none is specified.
+5. Fifth are `FileHandlerDefinition` instances.  These can be specified by Adapters, as well as Presets, and define what types of files are allowed as both input and output.  These instances are used internally by the `Transcoder` to ensure valid input/output and to assist in building a valid output file path if none is specified, or to catch an invalid path if provided.
 
-6. Last, there are `Job` classes.  Jobs are complex groupings of presets.  For example, if you want to transcode multiple files from one input file, or apply multiple presets to one file, that type of interaction can be specified in a `Job` class.
+6. Last, there are `Job` classes.  Jobs are complex groupings of presets.  For example, if you want to transcode multiple files from one input file, or apply multiple presets to one file, that type of interaction can be specified in a `Job` class, which you can then run the same as you would any other preset.
 
-Below you will see basic example usage and implementation of each the pieces mentioned above.
+Below you will see basic example usage and implementation of each the items mentioned above.
 
 ## Transcoder ##
 
@@ -88,7 +108,7 @@ Using the Transcoder by its self is simple, as it has no dependencies.  It can a
 	$transcoder->registerJob(new MyHtml5VideoJob);
 	
 	//transcode one file using a preset
-	$newFile = $transcoder->transcode($inputFilePath, 'webm-hd', $outputFilePath);
+	$newFile = $transcoder->transcodeWithPreset($inputFilePath, 'webm-hd', $outputFilePath);
 	
 	//transcode a file with a specific adaptor and options
 	$newFile = $transcoder->transcodeWithAdapter($inputFilePath, 'custom-ffmpeg', array(
@@ -96,6 +116,7 @@ Using the Transcoder by its self is simple, as it has no dependencies.  It can a
 	));
 	
 	//transcode one file using a job (could result in many files depending on the job definition), returns an array of files (only one entry if only one file was created)
+	//note this is subject to change, jobs have not been implemented
 	$files = $transcoder->transcodeWithJob($inputFilePath, 'html5_video');
 	
 	
@@ -144,6 +165,7 @@ Many file conversion tools are available as command line executables.  Writing c
 
 For example, the FFmpeg and Handbrake adapters use the `Symfony\Process` component to actually execute its command line process.  The general flow goes something like the following:
 	
+	//method of an adapter class
 	public function transcodeFile(File $inFile, Preset $preset, $outFilePath) {
 		// ... parse the $preset object to assemble a command string in $commandString ...
 		
@@ -202,7 +224,7 @@ By default, all `Adapter` and `Preset` classes will return `FileHandlerDefinitio
 
 ## Jobs ##
 
-A `Job` is a complex grouping of presets which perform multiple transcoding actions in one request.  It requires a little extra setup, but can make repetive tasks much easier to manage.  Jobs can apply multiple presets to one input file, or branch off and create several output files given one input.  For example, when optimizing videos for web delivery, you may need to transcode an uploaded video into several different formats of varying quality, and create several image thumbnails.  By defining a job classes which leverages other presets, you can define and register all of these actions in one location.
+A `Job` is a complex grouping of presets which perform multiple transcoding actions in one request.  It requires a little extra setup, but can make repetive tasks much easier to manage.  Jobs can apply multiple presets to one input file, or branch off and create several output files given one input.  For example, when optimizing videos for web delivery, you may need to transcode an uploaded video into several different formats of varying quality, and create several image thumbnails.  By defining a job classes which leverage other presets, you can define and register all of these actions in one location, ensuring each individual action is handled as thoroughly as possible.
 
 ### Registering a job ###
 
@@ -216,14 +238,37 @@ A `Job` is a complex grouping of presets which perform multiple transcoding acti
 
 	TODO
 
-# Roadmap #
+# Changes and Versioning #
 
-We will keep track of where we are, and where we're headed, in the development process here.  This library is in the earliest stages of development, so everything documented in this file is subject to change.
+We increment versions following the [Semantic Versioning](http://semver.org/) specification.  
+
+Important public API changes will be tracked in the *CHANGELOG.md* file once the project reaches `1.0.0-alpha.1` status.  Until that point, major API changes could happen at any time, so you'll have to look at the code documentation, or the README docs (which may or may not be up-to-date, but should be).
+
+# Version Roadmap #
+
+* 0.6.0                - you are here
+* For 0.7.0            - implement commands which don't utilize jobs
+* For 0.8.0            - implement jobs, finalize API, unit test them
+* For 0.9.0            - implement remaining job commands
+* For 1.0.0-alpha.1    - implement finalize and test default adapters/presets/jobs
+
+
+# Todo List #
+
+We will keep track of where we are in regards to specific tasks here.  This library is still in the early stages of development, so everything documented in this file is subject to change.
 
 Todo list:
 
 * Unit test and document Adapter
 * Unit test and document Transcoder
+* Commands:
+	* Add conflict flag options to transcode commands
+	* Transcode commands should return full file paths to console upon success
+	* Batch transcode commands
+		* `transcode:batch [pattern]`
+		* `transcode:batch:adapter [pattern]`
+		* `transcode:batch:job [pattern]`
+	* `finfo` - display all available file info for a given path
 * Implement jobs
 	* Allow chained presets on one output file
 	* Allow creation of multiple output files
@@ -235,14 +280,6 @@ Todo list:
 	* mencoder (?)
 	* various ImageMagick adapters
 * Implement common presets for above adapters
-* Commands:
-	* Add conflict flag options to transcode commands
-	* Transcode commands should return full file paths to console upon success
-	* Batch transcode commands
-		* `transcode:batch [pattern]`
-		* `transcode:batch:adapter [pattern]`
-		* `transcode:batch:job [pattern]`
-	* `finfo` - display all available file info for a given path
 
 # Contributing #
 

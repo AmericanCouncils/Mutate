@@ -4,19 +4,17 @@ namespace AC\Mutate\Application;
 use \AC\Mutate\Transcoder;
 use \Symfony\Component\Console\Application as BaseApplication;
 use \Symfony\Component\Console\Input\InputInterface;
+use \Symfony\Component\Console\Input\InputOption;
 use \Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Special application class which builds a shared instance of the Transcoder and automatically registers commands, adapters, presets and jobs
- *
- * @package default
- * @author Evan Villemez
+ * Main CLI Aplication class which builds a shared instance of the Transcoder and automatically registers commands, adapters, presets and jobs provided with the library.
  */
 class Application extends BaseApplication {
 	private $transcoder = false;
 	
 	public function __construct() {
-		parent::__construct("Mutate File Transcoder", "1.0.0-alpha1");
+		parent::__construct("Mutate File Transcoder", Transcoder::VERSION);
 		
 		//build transcoder
 		$this->transcoder = $this->buildTranscoder();
@@ -35,10 +33,14 @@ class Application extends BaseApplication {
 		foreach($this->getDefaultJobs() as $job) {
 			$this->transcoder->registerJob($job);
 		}
+
 	}
 	
 	/**
 	 * Run a command from string input.  By default will not catch exceptions when run in this manner.
+	 * 
+	 * This is provided as a convenient way to run commands with the stand-alone application from within another
+	 * framework or application, if need-be.
 	 *
 	 * @param string $string 
 	 * @param string $catch 
@@ -81,6 +83,19 @@ class Application extends BaseApplication {
 	
 		return $commands;
 	}
+	
+	/**
+	 * Modify the default InputDefinition to add entry for the interactive shell.
+	 *
+	 * @return Symfony\Component\Console\Input\InputDefinition
+	 */
+    protected function getDefaultInputDefinition()
+    {
+		$def = parent::getDefaultInputDefinition();
+		$def->addOption(new InputOption('--shell', '-s', InputOption::VALUE_NONE, 'Enter the interactive shell.'));
+		return $def;
+    }
+	
 	
 	/**
 	 * Return array of default adapters provided with the library
@@ -144,6 +159,7 @@ class Application extends BaseApplication {
 	 * @return int
 	 */
     public function doRun(InputInterface $input, OutputInterface $output) {
+
         if (true === $input->hasParameterOption(array('--shell', '-s'))) {
 			
             $shell = new Shell($this);
