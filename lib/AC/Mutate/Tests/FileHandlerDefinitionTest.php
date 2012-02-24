@@ -18,12 +18,9 @@ class FileHandlerDefinitionTest extends \PHPUnit_Framework_TestCase {
 		$d = new FileHandlerDefinition;
 		$this->assertFalse($d->getAllowedExtensions());
 		$this->assertFalse($d->getRejectedExtensions());
-		$this->assertFalse($d->getAllowDirectory());
-		$this->assertFalse($d->getAllowDirectoryCreation());
+		$this->assertTrue($d->getAllowDirectory());
 
-		$this->assertSame(0755, $d->getDirectoryCreationMode());
-		$this->assertSame(0644, $d->getFileCreationMode());
-		$this->assertSame('file', $d->getRequiredFileType());
+		$this->assertFalse($d->getRequiredType());
 		$this->assertTrue($d->acceptsExtension('mp4'));
 		$this->assertTrue($d->acceptsMime('text/plain; charset=us-ascii'));
 		$this->assertTrue($d->acceptsMimeType('text/plain'));
@@ -66,6 +63,11 @@ class FileHandlerDefinitionTest extends \PHPUnit_Framework_TestCase {
 		$d->setRejectedExtensions(array('mp3','mp4'));
 		$this->assertFalse($d->acceptsExtension('mp3'));
 		$this->assertTrue($d->acceptsExtension('mov'));
+		
+		$d = new FileHandlerDefinition;
+		$d->setRequiredExtension('mp4');
+		$this->assertFalse($d->acceptsExtension('mp3'));
+		$this->assertTrue($d->acceptsExtension('mp4'));
 	}
 
 	public function testAcceptsMimes() {
@@ -129,14 +131,21 @@ class FileHandlerDefinitionTest extends \PHPUnit_Framework_TestCase {
  	public function testAcceptDirectory1() {
  		$f = new File(__DIR__);
  		$d = new FileHandlerDefinition;
- 		$this->assertFalse($d->acceptsFile($f));
+ 		$this->assertTrue($d->acceptsFile($f));
  	}
 
  	public function testAcceptDirectory2() {
  		$f = new File(__DIR__);
  		$d = new FileHandlerDefinition;
- 		$d->setRequiredFileType('directory');
+ 		$d->setRequiredType('directory');
  		$this->assertTrue($d->acceptsFile($f));
+ 	}
+
+ 	public function testAcceptDirectory3() {
+ 		$f = new File(__DIR__);
+ 		$d = new FileHandlerDefinition;
+ 		$d->setRequiredType('file');
+ 		$this->assertFalse($d->acceptsFile($f));
  	}
 
 	public function testAcceptsFile1() {
@@ -148,7 +157,7 @@ class FileHandlerDefinitionTest extends \PHPUnit_Framework_TestCase {
 	public function testAcceptsFile2() {
 		$f = new File(__FILE__);
 		$d = new FileHandlerDefinition;
-		$d->setRequiredFileType('directory');
+		$d->setRequiredType('directory');
 		$this->assertFalse($d->acceptsFile($f));
 	}
 

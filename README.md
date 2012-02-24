@@ -222,9 +222,6 @@ We will keep track of where we are, and where we're headed, in the development p
 
 Todo list:
 
-* Implement Preset::generateOutputPath
-* Finish Preset unit tests
-* Implement Transcoder::processOutputFilepath
 * Unit test and document Adapter
 * Unit test and document Transcoder
 * Implement jobs
@@ -240,11 +237,12 @@ Todo list:
 * Implement common presets for above adapters
 * Commands:
 	* Add conflict flag options to transcode commands
+	* Transcode commands should return full file paths to console upon success
 	* Batch transcode commands
 		* `transcode:batch [pattern]`
 		* `transcode:batch:adapter [pattern]`
 		* `transcode:batch:job [pattern]`
-	* `status` - verify adapters, show results, show list of *usable* presets based on adapter status
+	* `finfo` - display all available file info for a given path
 
 # Contributing #
 

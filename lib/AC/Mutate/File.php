@@ -13,8 +13,39 @@ class File extends \SplFileObject {
 		$this->_realpath = realpath($path);
 	}
 	
+	public function getType() {
+		return $this->isDir() ? 'directory' : 'file';
+	}
+	
 	public function getContents() {
 		return file_get_contents($this->_realpath);
+	}
+	
+	public function putContents($content) {
+		return file_put_contents($this->_realpath, $content);
+	}
+	
+	/**
+	 * Returns an array of contained file objects if this file is a directory, otherwise false
+	 *
+	 * Note that directory links (`.` and `..`) are always ignored
+	 *
+	 * @return array | false
+	 */
+	public function getContainedFiles() {
+		if($this->isDir()) {
+			$files = array();
+			$basePath = rtrim($this->_realpath, DIRECTORY_SEPARATOR);
+			foreach(scandir($this->_realpath) as $fileName) {
+				if(!in_array($fileName, array('.','..'))) {
+					$files[] = new File($basePath.DIRECTORY_SEPARATOR.$fileName);
+				}
+			}
+			
+			return $files;
+		}
+		
+		return false;
 	}
 	
 	public function getExtension() {

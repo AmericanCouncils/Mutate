@@ -1,9 +1,10 @@
 <?php
 
 namespace AC\Mutate\Adapters;
-use AC\Mutate\Preset\Preset;
+use AC\Mutate\Preset;
 use AC\Mutate\Adapter;
 use AC\Mutate\File;
+use AC\Mutate\FileHandlerDefinition;
 
 /**
  * A very simple adapter to illustrate how writing an adapter should work.
@@ -28,7 +29,7 @@ class PhpText extends Adapter {
 	 */
 	public function validatePreset(Preset $preset) {
 		if(!$preset->get('func', false)) {
-			throw new \InvalidArgumentException('Func is a required preset option.');
+			throw new \InvalidArgumentException('"func" is a required preset option.');
 		}
 		
 		if(!in_array(strtolower($preset['func']), $this->allowedFunctions)) {
@@ -36,16 +37,24 @@ class PhpText extends Adapter {
 		}
 	}
 	
+	protected function buildInputDefinition() {
+		return new FileHandlerDefinition(array(
+			'rejectedMimeEncodings' => array('binary'),
+		));
+	}
+	
 	/**
 	 * Run transcode, transforming contents of a text-based file.
 	 */
-	public function transcodeFile(File $file, Preset $preset, $outFilePath) {
+	public function transcodeFile(File $inFile, Preset $preset, $outFilePath) {
 		
-		$function = $preset->get('func');
+		$function = $preset->get('func', false);
 		
-		file_put_contents($outFilePath, $function(file_get_contents($file->getFilename())));
+		if(!file_put_contents($outFilePath, $function(file_get_contents($inFile->getRealPath())))) {
+			throw new \RuntimeException(sprintf("Could not put contents into file %s", $outFilePath));
+		}
 		
 		return new File($outFilePath);
 	}
-
+		
 }

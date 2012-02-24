@@ -72,4 +72,26 @@ class FileTest extends \PHPUnit_Framework_TestCase {
 		$this->assertSame('us-ascii', $f5->getMimeEncoding());
 		$this->assertSame('us-ascii', $f6->getMimeEncoding());
 	}
+	
+	public function testGetType() {
+		$f1 = new File(__FILE__);
+		$this->assertSame('file', $f1->getType());
+		$f2 = new File(__DIR__);
+		$this->assertSame('directory', $f2->getType());
+	}
+	
+	public function testGetContainedFiles() {
+		$f = new File(__DIR__."/test_files");
+		$files = $f->getContainedFiles();
+		foreach($files as $file) {
+			$this->assertTrue($file instanceof File);
+			$this->assertTrue(in_array($file->getFilename(), array(
+				'foo',
+				'foo.txt',
+				'foo.md',
+				'foo.mp3',
+				'foo.pdf'
+			)));
+		}
+	}
 }

@@ -28,6 +28,30 @@ class Transcoder {
 	 * If the transcode process fails, keep any created files
 	 */
 	const ONFAIL_PRESERVE = 2;
+	
+	/**
+	 * If the transcode requires creating a directory, do it, but only for one level
+	 */
+	const ONDIR_CREATE = 1;
+	
+	/**
+	 * If the transcode requires creating a directory, fail with exception
+	 */
+	const ONDIR_EXCEPTION = 2;
+	
+	/**
+	 * The octal file creation mode to set for any files created during a transcode process
+	 *
+	 * @var octal
+	 */
+	protected $fileCreationMode = 0644;
+	
+	/**
+	 * The octal directory creation mode to set for any directories created during the transcode process
+	 *
+	 * @var octal
+	 */
+	protected $directoryCreationMode = 0755;
 
 	/**
 	 * Storage array of registered adapters
@@ -74,7 +98,7 @@ class Transcoder {
 	 * @param string $failMode - flag for what to do with the output file(s) on a failed transcode
 	 * @return void - \AC\Mutate\File instance for newly created file
 	 */
-	public function transcodeWithPreset($inFile, $preset, $outFile = false, $conflictMode = self::ONCONFLICT_INCREMENT, $failMode = self::ONFAIL_DELETE) {
+	public function transcodeWithPreset($inFile, $preset, $outFile = false, $conflictMode = self::ONCONFLICT_INCREMENT, $dirMode = self::ONDIR_EXCEPTION, $failMode = self::ONFAIL_DELETE) {
 
 		//get file
 		if(!$inFile instanceof File && is_string($inFile)) {
@@ -90,7 +114,7 @@ class Transcoder {
 		$preset->validateInputFile($inFile);
 
 		//get adapter
-		$adapter = $this->getAdapter($preset->getAdapter());
+		$adapter = $this->getAdapter($preset->getRequiredAdapter());
 		
 		//verify if this adapter can work in the current environment (happens only the first time it's loaded)
 		if(!$adapter->verify()) {
@@ -104,27 +128,34 @@ class Transcoder {
 		//generate the final output string
 		$outFilePath = $preset->generateOutputPath($inFile, $outFile);
 		
-		//make sure the output path is valid
-		$outFilePath = $this->processOutputFilepath($preset->getOutputDefinition(), $outFilePath, $conflictMode);
+		//make sure the output path is valid, create any directories as necessary
+		$outFilePath = $this->processOutputFilepath($outFilePath, $conflictMode, $dirMode);
 
 		try {
+			//TODO: setup some type of logging
+			
 			//notify listeners of transcode start
 			$this->dispatch('onTranscodeStart', $inFile, $preset, $outFilePath);
 
 			//run the transcode
-			$return = $adapter->transcodeFile($inFile, $outFilePath, $preset);
+			$return = $adapter->transcodeFile($inFile, $preset, $outFilePath);
 
 			//validate return
 			if(!$return instanceof File) {
 				throw new Exception\InvalidOutputException("Adapters must return an instance of AC\Mutate\File, or throw an exception upon error.");
 			}
-
 			$preset->validateOutputFile($return);
 			$adapter->validateOutputFile($return);
+			$this->cleanOutputFile($return);
 
+			//notify listeners of completion
+			$this->dispatch('onTranscodeComplete', $return);
+		
+			//return newly created file
+			return $return;
 		} catch (\Exception $e) {
 			//clean up files after failure
-			$this->cleanFailedTranscode($outFilePath, $failMode);
+			$this->cleanFailedTranscode($adapter, $outFilePath, $failMode);
 			
 			//notify listeners of failure
 			$this->dispatch('onTranscodeFailure', $inFile, $preset, $e);
@@ -132,12 +163,6 @@ class Transcoder {
 			//re-throw exception so environment can handle appropriately
 			throw $e;
 		}
-		
-		//notify listeners of completion
-		$this->dispatch('onTranscodeComplete', $return);
-		
-		//return new file
-		return $return;
 	}
 	
 	/**
@@ -151,44 +176,133 @@ class Transcoder {
 	 * @param string $failMode - flag for how to handle failed transcodes
 	 * @return \AC\Mutate\File
 	 */
-	public function transcodeWithAdapter($inFile, $adapterName, $outFile = false, $options = array(), $conflictMode = self::ONCONFLICT_INCREMENT, $failMode = self::ONFAIL_DELETE) {
+	public function transcodeWithAdapter($inFile, $adapterName, $outFile = false, $options = array(), $conflictMode = self::ONCONFLICT_INCREMENT, $dirMode = self::ONDIR_EXCEPTION, $failMode = self::ONFAIL_DELETE) {
 		//build a preset on the fly based on the options provided
 		$preset = new Preset('dynamic', $adapterName, $options);
-		return $this->transcodeWithPreset($inFile, $preset, $outFile, $conflictMode, $failMode);
+		return $this->transcodeWithPreset($inFile, $preset, $outFile, $conflictMode, $dirMode, $failMode);
 	}
 	
-	protected function processOutputFilepath(FileHandlerDefinition $outputDefinition, $outputPath, $conflictMode) {
-		//check for write permissions
+	public function transcodeWithJob($inFile, $job, $conflictMode = self::ONCONFLICT_INCREMENT, $dirMode = self::ONDIR_CREATE, $failMode = self::ONFAIL_DELETE) {
 		
-		//check for pre-existing file
+		//TODO: implement
+		throw new \RuntimeException(__METHOD__." not yet implemented.");
 		
-		//check for directory creation
-		
-		//check for conflict modes, generate modified path if necessary
-		
-		//throw exception if invalid
-		
-		return $string;
 	}
-	
-	protected function cleanFailedTranscode($outputFilePath, $failMode) {
-		if(file_exists($outFilePath)) {
-			if($failMode === self::ONFAIL_DELETE) {
 
-				//TODO: check for directories
+	protected function processOutputFilepath($outputPath, $conflictMode, $dirMode) {
+		$outputIsDirectory = $this->pathIsDirectory($outputPath);
 
-				@unlink($outFilePath);
-
+		//check for pre-existing file and handle based on conflict mode
+		if(file_exists($outputPath)) {
+			if($conflictMode === self::ONCONFLICT_EXCEPTION) {
+				throw new Exception\FileAlreadyExistsException("Transcode cannot run because file %s already exists.");
 			}
+			
+			if($conflictMode === self::ONCONFLICT_DELETE) {
+				if($outputIsDirectory) {
+					$this->removeDirectory($outputPath);
+				} else {
+					@unlink($outputPath);
+				}
+			}
+			
+			if($conflictMode === self::ONCONFLICT_INCREMENT) {
+				$outputPath = $this->incrementConflictingPath($outputPath);
+			}
+		}
+		
+		//check for necessary containing directory creation, handle based on directory mode
+		$outputDirectory = dirname($outputPath);
+
+		if(!file_exists($outputDirectory)) {
+			if($dirMode === self::ONDIR_EXCEPTION) {
+				throw new Exception\InvalidModeException("The Transcoder is not permitted to create new directories if needed.");
+			}
+			
+			//try creating the necessary containing directories recursively
+			if(!mkdir($outputDirectory, $this->getDirectoryCreationMode(), true)) {
+				throw new Exception\FilePermissionException("The required containing directories could not be created.");
+			}
+		}
+
+		//check for write permissions
+		if(!is_writable($outputDirectory)) {
+			throw new Exception\FilePermissionException(sprintf("Cannot transcode because the directory %s is not writable.", $outputDirectory));
+		}
+		
+		//if the output is a directory, make sure the actual required directory is created
+		if($outputIsDirectory) {
+			if(!mkdir($outputPath, $this->getDirectoryCreationMode())) {
+				throw new Exception\FilePermissionException(sprintf("Could not properly create the required output directory %s.", $outputPath));
+			}
+		}
+		
+		return $outputPath;
+	}
+	
+	protected function incrementConflictingPath($path) {
+		$isDir = $this->pathIsDirectory($path);
+		$expPath = explode(DIRECTORY_SEPARATOR, $path);
+		$oldFileName = array_pop($expPath);
+		$basePath = implode(DIRECTORY_SEPARATOR, $expPath);
+		if($isDir) {
+			//for directories append incremented number after underscore
+			$i = 1;
+			while(file_exists($newFileName = $basePath.DIRECTORY_SEPARATOR.$oldFileName."_".$i)) {
+				$i++;
+			}
+		} else {
+			//for files insert incremented number between filename and extension
+			$exp = explode(".", $oldFileName);
+			$extension = array_pop($exp);
+			$name = implode(".", $exp);
+			$i = 1;
+			while(file_exists($newFileName = $basePath.DIRECTORY_SEPARATOR.$name.".".$i.".".$extension)) {
+				$i++;
+			}
+		}
+		
+		return $newFileName;
+	}
+
+	protected function removeDirectory($path) {
+		foreach(scandir($path) as $item) {
+			if(!in_array($item, array('.','..'))) {
+				@unlink($path.DIRECTORY_SEPARATOR.$item);
+			}
+		}
+		
+		if(!rmdir($path)) {
+			throw new Exception\FilePermissionException(sprintf("Could not remove directory %s", $path));
 		}
 	}
 		
-	public function transcodeWithJob($inFile, $job) {
+	protected function pathIsDirectory($path) {
+		$exp = explode(DIRECTORY_SEPARATOR, $path);
+		$name = end($exp);
+		$exp = explode(".", $name);
 		
-		//TODO: implement
-		
+		return !(count($exp) >= 2);
 	}
 	
+	protected function cleanOutputFile(File $file) {
+		if($file->isDir()) {
+			chmod($file->getRealPath(), $this->getDirectoryCreationMode());
+		} else {
+			chmod($file->getRealPath(), $this->getFileCreationMode());
+		}
+	}
+	
+	protected function cleanFailedTranscode($adapter, $outputFilePath, $failMode) {
+		if(file_exists($outputFilePath)) {
+			if($failMode === self::ONFAIL_DELETE) {
+				@unlink($outputFilePath);
+			}
+		}
+		
+		$adapter->cleanFailedTranscode($outputFilePath);
+	}
+		
 	public function registerListener(EventListener $listener) {
 		$this->listeners[get_class($listener)] = $listener;
 		return $this;
@@ -311,6 +425,34 @@ class Transcoder {
 	
 	public function getJobs() {
 		return $this->jobs;
+	}
+	
+	public function getFileCreationMode() {
+		return $this->fileCreationMode;
+	}
+	
+	public function setFileCreationMode($mode) {
+		//force format into octal if a string was received, for example "755" instead of 0755
+		if(0 != $mode[0]) {
+			$mode = "0".$mode;
+		}
+
+		$this->fileCreationMode = (int) $mode;
+		return $this;
+	}
+	
+	public function getDirectoryCreationMode() {
+		return $this->directoryCreationMode;
+	}
+	
+	public function setDirectoryCreationMode($mode) {
+		//force format into octal if a string was received, for example "755" instead of 0755
+		if(0 != $mode[0]) {
+			$mode = "0".$mode;
+		}
+
+		$this->directoryCreationMode = (int) $mode;
+		return $this;
 	}
 	
 }

@@ -112,7 +112,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 
 	public function testAcceptsInputFile2() {
 		$p = new DummyPreset;
-		$this->assertFalse($p->acceptsInputFile(new File(__DIR__)));
+		$this->assertTrue($p->acceptsInputFile(new File(__DIR__)));
 	}
 	
 	public function testAcceptsOutputFile1() {
@@ -122,24 +122,24 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 
 	public function testAcceptsOutputFile2() {
 		$p = new DummyPreset;
-		$this->assertFalse($p->acceptsOutputFile(new File(__DIR__)));
+		$this->assertTrue($p->acceptsOutputFile(new File(__DIR__)));
 	}
 
-	public function testGenerateOutputPath1() {
+	public function testGenerateOutputPathFile1() {
 		$f = new File(__FILE__);
 		$p = new DummyPreset;
 		$expectedPath = substr($f->getRealPath(), 0, -4).".".$p->getName().".php";
 		$this->assertSame($expectedPath, $p->generateOutputPath($f));
 	}
 	
-	public function testGenerateOutputPath2() {
+	public function testGenerateOutputPathFile2() {
 		$f = new File(__FILE__);
 		$p = new DummyPreset;
 		$expectedPath = '/tmp/test.php';
 		$this->assertSame($expectedPath, $p->generateOutputPath($f, $expectedPath));
 	}
 	
-	public function testGenerateOutputPath3() {
+	public function testGenerateOutputPathFile3() {
 		$f = new File(__FILE__);
 		$p = new DummyPreset;
 		$outputPath = __DIR__;
@@ -147,8 +147,86 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 		$this->assertSame($expectedPath, $p->generateOutputPath($f, $outputPath));
 	}
 	
-	public function testGenerateOutputPath4() {
+	public function testGenerateOutputPathFile4() {
+		$f = new File(__FILE__);
+		$p = new DummyPreset;
+		$p->getOutputDefinition()->setRequiredExtension('mp3');
+		$outputPath = '/foo/stuff.mp4';
+		$this->setExpectedException("AC\Mutate\Exception\InvalidInputException");
+		$p->generateOutputPath($f, $outputPath);
+	}
+
+	public function testGenerateOutputPathFile5() {
+		$f = new File(__FILE__);
+		$p = new DummyPreset;
+		$p->getOutputDefinition()->setRequiredExtension('mp3');
+		$outputPath = '/foo/';
+		$expected = '/foo/'.substr($f->getFilename(), 0, -4).".".$p->getName().".mp3";
+		$this->assertSame($expected, $p->generateOutputPath($f, $outputPath));
+	}
+
+	public function testGenerateOutputPathFile6() {
+		$f = new File(__FILE__);
+		$p = new DummyPreset;
+		$p->getOutputDefinition()->setRequiredExtension('mp3');
+		$outputPath = '/foo';
+		$expected = '/foo/'.substr($f->getFilename(), 0, -4).".".$p->getName().".mp3";
+		$this->assertSame($expected, $p->generateOutputPath($f, $outputPath));
+	}
+
+	public function testGenerateOutputPathFile7() {
+		$f = new File(__FILE__);
+		$p = new DummyPreset;
+		$p->getOutputDefinition()->setRequiredExtension('mp3');
+		$outputPath = '/foo/../';
+		$expected = '/foo/../'.substr($f->getFilename(), 0, -4).".".$p->getName().".mp3";
+		$this->assertSame($expected, $p->generateOutputPath($f, $outputPath));
+	}
+	
+	public function testGenerateOutputPathFile8() {
+		$f = new File(__FILE__);
+		$p = new DummyPreset;
+		$p->getOutputDefinition()->setInheritExtension(false);
+		$outputPath = __DIR__;
+		$this->setExpectedException("AC\Mutate\Exception\InvalidPresetException");
+		$p->generateOutputPath($f, $outputPath);
+	}
+	
+	public function testGenerateOutputPathDirectory1() {
+		$f = new File(__FILE__);
+		$p = new DummyPreset;
+		$p->getOutputDefinition()->setRequiredType('directory');
+		$expected = dirname($f->getRealPath())."/".$p->getName();
+		$this->assertSame($expected, $p->generateOutputPath($f));
+	}
+
+	public function testGenerateOutputPathDirectory2() {
+		$f = new File(__FILE__);
+		$p = new DummyPreset;
+		$p->getOutputDefinition()->setRequiredType('directory');
+		$outputPath = '/foo/somedir';
+		$expected = $outputPath;
+		$this->assertSame($expected, $p->generateOutputPath($f, $outputPath));
+	}
+
+	public function testGenerateOutputPathDirectory3() {
+		$f = new File(__FILE__);
+		$p = new DummyPreset;
+		$p->getOutputDefinition()->setRequiredType('directory');
 		
+		$outputPath = '/foo.mp3';
+		$this->setExpectedException("AC\Mutate\Exception\InvalidInputException");
+		$p->generateOutputPath($f, $outputPath);
+	}
+
+	public function testGenerateOutputPathDirectory4() {
+		$f = new File(__FILE__);
+		$p = new DummyPreset;
+		$p->getOutputDefinition()->setRequiredType('directory');
+		
+		$outputPath = '../../stuff';
+		$expected = $outputPath;
+		$this->assertSame($expected, $p->generateOutputPath($f, $outputPath));
 	}
 }
 
