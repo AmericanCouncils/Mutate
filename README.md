@@ -26,7 +26,8 @@ Evan is working on the core library and the commands that use it.
 
 Jay is working specifically on Handbrake and its presets at the moment.
 
-*What we need:*
+**What we need:**
+
 * FFmpeg adapters / presets
 * ImageMagick adapter(s) / presets
 	* Note, since ImageMagick actually has a native PHP api, it probably makes most since to have several "adapters" geared towards certain tasks that can be easily parameterized. Such as:
