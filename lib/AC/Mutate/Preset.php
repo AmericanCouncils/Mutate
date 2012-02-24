@@ -262,7 +262,7 @@ class Preset implements \ArrayAccess, \Serializable {
 					//get proper output extension
 					$outputExtension = $this->resolveOutputExtension($inFile);
 				
-					return $outputPath.DIRECTORY_SEPARATOR.$baseName.".".$this->getName().".".$outputExtension;
+					return $outputPath.DIRECTORY_SEPARATOR.$baseName.".".$outputExtension;
 				}
 			}
 		}

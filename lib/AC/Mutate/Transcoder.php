@@ -5,6 +5,11 @@ namespace AC\Mutate;
 class Transcoder {
 	
 	/**
+	 * The general version for the library, stored as a constant here as this object is the main entry point.
+	 */
+	const VERSION = "0.6.0";
+	
+	/**
 	 * If a file already exists, remove the pre-existing file before initiating the transcode
 	 */
 	const ONCONFLICT_DELETE = 1;
@@ -320,6 +325,10 @@ class Transcoder {
 		return isset($this->listeners[$className]);
 	}
 	
+	/**
+	 * Call all listeners with the given function name and any arguments provided.  This implementation is likely to change.
+	 *
+	 */
 	protected function dispatch() {
 		try {
 			$args = func_get_args();
