@@ -39,6 +39,11 @@ abstract class Adapter {
 		throw new \RuntimeException("Adapter::transcodeFile must be implemented by an extending class.");
 	}
 	
+	/**
+	 * Gets called by the Transcoder when a transcode process fails.
+	 *
+	 * @param string $outFilePath 
+	 */
 	public function cleanFailedTranscode($outFilePath) {
 		
 	}

@@ -35,7 +35,7 @@ class Transcoder {
 	const ONFAIL_PRESERVE = 2;
 	
 	/**
-	 * If the transcode requires creating a directory, do it, but only for one level
+	 * If the transcode requires creating a directory, create the necessary directories recursively
 	 */
 	const ONDIR_CREATE = 1;
 	

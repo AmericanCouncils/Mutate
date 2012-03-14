@@ -1,4 +1,4 @@
-#!/usr/bin/env php
+#!/usr/bin/env php 
 <?php
 /*
 Note that this script will check for classes in the top-level adapter/presets/jobs directories provided with the library.  If any classes are found
@@ -14,7 +14,7 @@ use \AC\Mutate\Application\Application;
 
 require(__DIR__."/../vendor/.composer/autoload.php");
 
-function register_objects_by_type($app, $type) {
+function register_objects_by_type(Application $app, $type) {
 	$path = __DIR__."/../".$type."s/";
 	$registrationMethod = 'register'.ucfirst(strtolower($type));
 	
@@ -38,5 +38,7 @@ $app = new Application;
 register_objects_by_type($app, 'adapter');
 register_objects_by_type($app, 'preset');
 register_objects_by_type($app, 'job');
+
+//TODO: consider custom commands as well
 
 $app->run();
