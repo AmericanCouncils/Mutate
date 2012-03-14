@@ -35,7 +35,7 @@ class Transcoder {
 	const ONFAIL_PRESERVE = 2;
 	
 	/**
-	 * If the transcode requires creating a directory, do it, but only for one level
+	 * If the transcode requires creating a directory, create the necessary directories recursively
 	 */
 	const ONDIR_CREATE = 1;
 	
@@ -363,7 +363,7 @@ class Transcoder {
 	}
 	
 	public function registerAdapter(Adapter $adapter) {
-		$this->adapters[$adapter->getName()] = $adapter;
+		$this->adapters[$adapter->getKey()] = $adapter;
 
 		return $this;
 	}
@@ -393,7 +393,7 @@ class Transcoder {
 	}
 	
 	public function registerPreset(Preset $preset) {
-		$this->presets[$preset->getName()] = $preset;
+		$this->presets[$preset->getKey()] = $preset;
 
 		return $this;
 	}
@@ -423,7 +423,7 @@ class Transcoder {
 	}
 	
 	public function registerJob(Job $job) {
-		$this->jobs[$job->getName()] = $job;
+		$this->jobs[$job->getKey()] = $job;
 
 		return $this;
 	}

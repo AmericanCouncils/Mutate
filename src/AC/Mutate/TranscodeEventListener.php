@@ -22,7 +22,7 @@ abstract class TranscodeEventListener {
 	 * @param string $outputFilePath 
 	 */
 	public function onTranscodeStart(File $inFile, Preset $preset, $outputFilePath) {
-		
+		return;
 	}
 
 	/**
@@ -33,7 +33,7 @@ abstract class TranscodeEventListener {
 	 * @param File $outFile 
 	 */
 	public function onTranscodeComplete(File $inFile, Preset $preset, File $outFile) {
-		
+		return;
 	}
 	
 	/**
@@ -48,6 +48,7 @@ abstract class TranscodeEventListener {
 	 * @param Exception $e 
 	 */
 	public function onTranscodeFailure(File $inFile, Preset $preset, $outputFilePath, \Exception $e) {
-		
+		return;
 	}
+
 }

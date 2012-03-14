@@ -33,7 +33,8 @@ For your convenience, you can copy/paste the template code below into a new file
 	use \AC\Mutate\FileHandlerDefinition;
 	
 	class MyNewAdapter extends Adapter {
-		protected $name = 'adapter_name';
+		protected $key = 'adapter_key';
+		protected $name = "Human-readable name for adapter.";
 		protected $description = "Brief human-readable description of this adapter can do.";
 		
 		public function transcodeFile(File $inFile, Preset $preset, $outputFilePath) {
@@ -50,7 +51,7 @@ For your convenience, you can copy/paste the template code below into a new file
 
 			//if you want to specify restrictions on the types of input files this adapter can handle, you can set those restrictions here
 			
-			return $def FileHandlerDefinition;
+			return $def;
 		}
 		
 		protected function buildOutputDefinition() {
@@ -74,5 +75,13 @@ For your convenience, you can copy/paste the template code below into a new file
 			//should be implemented here.  Throw exceptions on failure, return `true` on success.
 			
 			return true;
+		}
+		
+		public function cleanFailedTranscode($outputFilePath) {
+			//if a transcode fails, the transcoder will call this method automatically
+			//implement any custom logic that needs to happen here.
+			
+			//note that the transcoder will take care of deleting fails on a failed transcode, if it's mode specifies that it should
+			//this method is only intended to be use for logic specific to the adapter, which the Transcoder cannot anticipate
 		}
 	}

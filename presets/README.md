@@ -31,9 +31,10 @@ For your convenience, you can copy/paste the template code below into a new file
 	use \AC\Mutate\FileHandlerDefinition;
 	
 	class MyNewPreset extends Preset {
-		protected $name = 'preset_name';
-		protected $requiredAdapter = 'required_adapter_name';
+		protected $key = 'preset_key';
+		protected $name = "Human-readable name of preset";
 		protected $description = "Provide a human-readable description here.";
+		protected $requiredAdapter = 'required_adapter_key';
 		
 		public function configure() {
 			$this->setOptions(array(

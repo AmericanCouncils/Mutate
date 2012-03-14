@@ -3,9 +3,16 @@
 namespace AC\Mutate;
 
 class Preset implements \ArrayAccess, \Serializable {
-
+	
 	/**
 	 * A machine-key string name for the preset.  Should be lower-cased with underscores.
+	 *
+	 * @var string
+	 */
+	protected $key = false;
+
+	/**
+	 * A human-readable name for the preset.
 	 *
 	 * @var string
 	 */
@@ -60,10 +67,10 @@ class Preset implements \ArrayAccess, \Serializable {
 	 * @param string $adapter 
 	 * @param array $options 
 	 */
-	public function __construct($name = false, $requiredAdapter = false, $options = array()) {
+	public function __construct($key = false, $requiredAdapter = false, $options = array()) {
 		//if already set (by extension), don't override
-		if(!$this->name) {
-			$this->name = $name;
+		if(!$this->key) {
+			$this->key = $key;
 		}
 
 		//if already set (by extension), don't override
@@ -79,8 +86,8 @@ class Preset implements \ArrayAccess, \Serializable {
 		$this->configure();
 		
 		//make sure we have the requirements
-		if(!$this->name) {
-			throw new Exception\InvalidPresetException("Presets require a valid name to be specified.");
+		if(!$this->key) {
+			throw new Exception\InvalidPresetException("Presets require a valid key to be specified.");
 		}
 		
 		if(!$this->requiredAdapter) {
@@ -97,12 +104,24 @@ class Preset implements \ArrayAccess, \Serializable {
 	}
 	
 	/**
-	 * Return string name of this preset.
+	 * Return the key for this preset
 	 *
 	 * @return string
-	 * @author Evan Villemez
+	 */
+	public function getKey() {
+		return $this->key;
+	}
+	
+	/**
+	 * Return string name of this preset, the key will be returned if a name is not defined.
+	 *
+	 * @return string
 	 */
 	public function getName() {
+		if(!$this->name) {
+			return $this->key;
+		}
+		
 		return $this->name;
 	}
 	
@@ -266,7 +285,7 @@ class Preset implements \ArrayAccess, \Serializable {
 					//if the output directory contains the input file, we should infix the preset name of the output file
 					$contains = file_exists($outputPath.DIRECTORY_SEPARATOR.$inFile->getFilename());
 					return $contains ? 
-						$outputPath.DIRECTORY_SEPARATOR.$baseName.".".$this->getName().".".$outputExtension :
+						$outputPath.DIRECTORY_SEPARATOR.$baseName.".".$this->getKey().".".$outputExtension :
 						$outputPath.DIRECTORY_SEPARATOR.$baseName.".".$outputExtension;
 				}
 			}
@@ -277,7 +296,7 @@ class Preset implements \ArrayAccess, \Serializable {
 			//check output definition for required types
 			if($this->getOutputDefinition()->getRequiredType() === 'directory') {
 				//default to creating directory named by preset
-				return $inputDirectory.DIRECTORY_SEPARATOR.$this->getName();
+				return $inputDirectory.DIRECTORY_SEPARATOR.$this->getKey();
 			} else {
 				//otherwise default to creating new file path with format infileName.presetName.required_or_inheritedExtension
 				$outputExtension = $this->resolveOutputExtension($inFile);
@@ -289,7 +308,7 @@ class Preset implements \ArrayAccess, \Serializable {
 				}
 				$baseName = implode(".", $exp);
 				
-				return $inputDirectory.DIRECTORY_SEPARATOR.$baseName.".".$this->getName().".".$outputExtension;
+				return $inputDirectory.DIRECTORY_SEPARATOR.$baseName.".".$this->getKey().".".$outputExtension;
 			}
 		}
 

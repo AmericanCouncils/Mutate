@@ -86,7 +86,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 	
 	public function testGetNameAdapterAndDescription() {
 		$p = new Preset('name','adapter');
-		$this->assertSame('name', $p->getName());
+		$this->assertSame('name', $p->getKey());
 		$this->assertSame('adapter', $p->getRequiredAdapter());
 		$this->assertSame("No description provided.", $p->getDescription());
 	}
@@ -128,7 +128,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 	public function testGenerateOutputPathFile1() {
 		$f = new File(__FILE__);
 		$p = new DummyPreset;
-		$expectedPath = substr($f->getRealPath(), 0, -4).".".$p->getName().".php";
+		$expectedPath = substr($f->getRealPath(), 0, -4).".".$p->getKey().".php";
 		$this->assertSame($expectedPath, $p->generateOutputPath($f));
 	}
 	
@@ -136,7 +136,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 		$f = new File(__FILE__);
 		$p = new DummyPreset;
 		$outputPath = dirname($f->getRealPath());
-		$expectedPath = substr($f->getRealPath(), 0, -4).".".$p->getName().".php";
+		$expectedPath = substr($f->getRealPath(), 0, -4).".".$p->getKey().".php";
 		$this->assertSame($expectedPath, $p->generateOutputPath($f, $outputPath));
 	}
 
@@ -151,7 +151,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 		$f = new File(__FILE__);
 		$p = new DummyPreset;
 		$outputPath = __DIR__;
-		$expectedPath = substr($f->getRealPath(), 0, -4).".".$p->getName().".php";
+		$expectedPath = substr($f->getRealPath(), 0, -4).".".$p->getKey().".php";
 		$this->assertSame($expectedPath, $p->generateOutputPath($f, $outputPath));
 	}
 	
@@ -204,7 +204,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 		$f = new File(__FILE__);
 		$p = new DummyPreset;
 		$p->getOutputDefinition()->setRequiredType('directory');
-		$expected = dirname($f->getRealPath())."/".$p->getName();
+		$expected = dirname($f->getRealPath())."/".$p->getKey();
 		$this->assertSame($expected, $p->generateOutputPath($f));
 	}
 
@@ -239,7 +239,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 }
 
 class DummyPreset extends Preset {
-	protected $name = 'test_preset';
+	protected $key = 'test_preset';
 	protected $requiredAdapter = "adapter_name";
 	
 	
