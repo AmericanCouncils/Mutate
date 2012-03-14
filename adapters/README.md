@@ -33,7 +33,8 @@ For your convenience, you can copy/paste the template code below into a new file
 	use \AC\Mutate\FileHandlerDefinition;
 	
 	class MyNewAdapter extends Adapter {
-		protected $name = 'adapter_name';
+		protected $key = 'adapter_key';
+		protected $name = "Human-readable name for adapter.";
 		protected $description = "Brief human-readable description of this adapter can do.";
 		
 		public function transcodeFile(File $inFile, Preset $preset, $outputFilePath) {

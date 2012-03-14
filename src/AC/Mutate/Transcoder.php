@@ -363,7 +363,7 @@ class Transcoder {
 	}
 	
 	public function registerAdapter(Adapter $adapter) {
-		$this->adapters[$adapter->getName()] = $adapter;
+		$this->adapters[$adapter->getKey()] = $adapter;
 
 		return $this;
 	}
@@ -393,7 +393,7 @@ class Transcoder {
 	}
 	
 	public function registerPreset(Preset $preset) {
-		$this->presets[$preset->getName()] = $preset;
+		$this->presets[$preset->getKey()] = $preset;
 
 		return $this;
 	}
@@ -423,7 +423,7 @@ class Transcoder {
 	}
 	
 	public function registerJob(Job $job) {
-		$this->jobs[$job->getName()] = $job;
+		$this->jobs[$job->getKey()] = $job;
 
 		return $this;
 	}

@@ -3,6 +3,7 @@
 namespace AC\Mutate;
 
 abstract class Adapter {
+	protected $key = false;
 	protected $name = false;
 	protected $description = false;
 	protected $inputDefinition = false;
@@ -45,7 +46,7 @@ abstract class Adapter {
 	 * @param string $outFilePath 
 	 */
 	public function cleanFailedTranscode($outFilePath) {
-		
+		return;
 	}
 	
 	public function validatePreset(Preset $preset) {
@@ -100,7 +101,26 @@ abstract class Adapter {
 		return true;
 	}
 	
+	
+	/**
+	 * Return the key for this adapter
+	 *
+	 * @return string
+	 */
+	public function getKey() {
+		return $this->key;
+	}
+	
+	/**
+	 * Return string name of this adapter, the key will be returned if a name is not defined.
+	 *
+	 * @return string
+	 */
 	public function getName() {
+		if(!$this->name) {
+			return $this->key;
+		}
+		
 		return $this->name;
 	}
 	
