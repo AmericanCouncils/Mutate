@@ -44,7 +44,7 @@ class TranscoderStatus extends Command {
 			$output->writeln($formatter->formatBlock("No usable presets.", 'info'));
 		} else {
 			foreach($usablePresets as $preset) {
-				$output->writeln($preset->getName()." - ".$formatter->formatBlock($preset->getDescription(), 'info'));
+				$output->writeln($formatter->formatBlock($preset->getName()." (".$preset->getKey().")", 'comment').": ".$formatter->formatBlock($preset->getDescription(), 'info'));
 			}
 		}
 		
