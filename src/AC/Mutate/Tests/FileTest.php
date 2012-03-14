@@ -3,8 +3,6 @@
 namespace AC\Mutate\Tests;
 use \AC\Mutate\File;
 
-include_once __DIR__."/../../../../vendor/.composer/autoload.php";
-
 class FileTest extends \PHPUnit_Framework_TestCase {
 	
 	public function testInstantiate() {

@@ -17,18 +17,20 @@ class TranscodeFileWithPreset extends Command {
 	
 	protected function onConfigure() {
 		$this->addArgument('inFile', InputArgument::REQUIRED, "String path to input file.");
-		$this->addArgument('preset', InputArgument::REQUIRED, "Name of preset to use.");
+		$this->addArgument('preset_key', InputArgument::REQUIRED, "Key of preset to use.");
 		$this->addArgument('outFile', InputArgument::OPTIONAL, "String path to output file.  If not provided, will be determined automatically based on source file.", false);
 //		$this->addOption();
 	}
 	
     protected function execute(InputInterface $input, OutputInterface $output) {
 		$inFile = new File($input->getArgument('inFile'));
-		$presetName = $input->getArgument('preset');
+		$presetName = $input->getArgument('preset_key');
 		$outputPath = $input->getArgument('outFile');
 		
 		//TODO: update with options for setting conflict/dir/fail modes
 		
-		return $this->getTranscoder()->transcodeWithPreset($inFile, $presetName, $outputPath, Transcoder::ONCONFLICT_INCREMENT, Transcoder::ONDIR_CREATE, Transcoder::ONFAIL_DELETE);
+		$newFile = $this->getTranscoder()->transcodeWithPreset($inFile, $presetName, $outputPath, Transcoder::ONCONFLICT_INCREMENT, Transcoder::ONDIR_CREATE, Transcoder::ONFAIL_DELETE);
+		
+		return true;
 	}
 }

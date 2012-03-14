@@ -4,8 +4,6 @@ namespace AC\Mutate\Tests;
 use \AC\Mutate\FileHandlerDefinition;
 use \AC\Mutate\File;
 
-include_once __DIR__."/../../../../vendor/.composer/autoload.php";
-
 class FileHandlerDefinitionTest extends \PHPUnit_Framework_TestCase {
 
 	public function testInstantiate() {

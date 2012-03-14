@@ -159,6 +159,12 @@ class Application extends BaseApplication {
 	 * @return int
 	 */
     public function doRun(InputInterface $input, OutputInterface $output) {
+		
+		//setup and register transcoder listener to give user feedback during any transcode events
+		$listener = new Listener;
+		$listener->setOutput($output);
+		$listener->setHelperSet($this->getHelperSet());
+		$this->getTranscoder()->registerListener($listener);
 
         if (true === $input->hasParameterOption(array('--shell', '-s'))) {
 			
@@ -169,7 +175,7 @@ class Application extends BaseApplication {
         }
 
         return parent::doRun($input, $output);
-	}	
+	}
 	
 	/**
 	 * Return shared Transcoder instance

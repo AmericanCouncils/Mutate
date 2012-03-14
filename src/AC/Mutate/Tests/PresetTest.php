@@ -5,8 +5,6 @@ use \AC\Mutate\File;
 use \AC\Mutate\Preset;
 use \AC\Mutate\FileHandlerDefinition;
 
-include_once __DIR__."/../../../../vendor/.composer/autoload.php";
-
 class PresetTest extends \PHPUnit_Framework_TestCase {
 	
 	public function testInstatiateDynamic1() {
@@ -27,13 +25,13 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 
 	public function testInstantiateExtended1() {
         $this->setExpectedException('AC\Mutate\Exception\InvalidPresetException');
-		$p = new InvalidDummyPreset;
+		$p = new Mock\InvalidDummyPreset;
 	}
 
 	public function testInstantiateExtended2() {
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$this->assertNotNull($p);
-		$this->assertTrue($p instanceof DummyPreset);
+		$this->assertTrue($p instanceof Preset);
 	}
 	
 	public function testSetGetHasRemoveOption() {
@@ -106,35 +104,35 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 	}
 	
 	public function testAcceptsInputFile1() {
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$this->assertTrue($p->acceptsInputFile(new File(__FILE__)));
 	}
 
 	public function testAcceptsInputFile2() {
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$this->assertTrue($p->acceptsInputFile(new File(__DIR__)));
 	}
 	
 	public function testAcceptsOutputFile1() {
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$this->assertTrue($p->acceptsOutputFile(new File(__FILE__)));
 	}
 
 	public function testAcceptsOutputFile2() {
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$this->assertTrue($p->acceptsOutputFile(new File(__DIR__)));
 	}
 
 	public function testGenerateOutputPathFile1() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$expectedPath = substr($f->getRealPath(), 0, -4).".".$p->getKey().".php";
 		$this->assertSame($expectedPath, $p->generateOutputPath($f));
 	}
 	
 	public function testGenerateOutputPathFile1_1() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$outputPath = dirname($f->getRealPath());
 		$expectedPath = substr($f->getRealPath(), 0, -4).".".$p->getKey().".php";
 		$this->assertSame($expectedPath, $p->generateOutputPath($f, $outputPath));
@@ -142,14 +140,14 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 
 	public function testGenerateOutputPathFile2() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$expectedPath = '/tmp/test.php';
 		$this->assertSame($expectedPath, $p->generateOutputPath($f, $expectedPath));
 	}
 	
 	public function testGenerateOutputPathFile3() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$outputPath = __DIR__;
 		$expectedPath = substr($f->getRealPath(), 0, -4).".".$p->getKey().".php";
 		$this->assertSame($expectedPath, $p->generateOutputPath($f, $outputPath));
@@ -157,7 +155,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 	
 	public function testGenerateOutputPathFile4() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredExtension('mp3');
 		$outputPath = '/foo/stuff.mp4';
 		$this->setExpectedException("AC\Mutate\Exception\InvalidInputException");
@@ -166,7 +164,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 
 	public function testGenerateOutputPathFile5() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredExtension('mp3');
 		$outputPath = '/foo/';
 		$expected = '/foo/'.substr($f->getFilename(), 0, -4).".mp3";
@@ -175,7 +173,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 
 	public function testGenerateOutputPathFile6() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredExtension('mp3');
 		$outputPath = '/foo';
 		$expected = '/foo/'.substr($f->getFilename(), 0, -4).".mp3";
@@ -184,7 +182,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 
 	public function testGenerateOutputPathFile7() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredExtension('mp3');
 		$outputPath = '/foo/../';
 		$expected = '/foo/../'.substr($f->getFilename(), 0, -4).".mp3";
@@ -193,7 +191,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 	
 	public function testGenerateOutputPathFile8() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setInheritExtension(false);
 		$outputPath = __DIR__;
 		$this->setExpectedException("AC\Mutate\Exception\InvalidPresetException");
@@ -202,7 +200,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 	
 	public function testGenerateOutputPathDirectory1() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredType('directory');
 		$expected = dirname($f->getRealPath())."/".$p->getKey();
 		$this->assertSame($expected, $p->generateOutputPath($f));
@@ -210,7 +208,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 
 	public function testGenerateOutputPathDirectory2() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredType('directory');
 		$outputPath = '/foo/somedir';
 		$expected = $outputPath;
@@ -219,7 +217,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 
 	public function testGenerateOutputPathDirectory3() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredType('directory');
 		
 		$outputPath = '/foo.mp3';
@@ -229,7 +227,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 
 	public function testGenerateOutputPathDirectory4() {
 		$f = new File(__FILE__);
-		$p = new DummyPreset;
+		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredType('directory');
 		
 		$outputPath = '../../stuff';
@@ -238,11 +236,3 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 	}
 }
 
-class DummyPreset extends Preset {
-	protected $key = 'test_preset';
-	protected $requiredAdapter = "adapter_name";
-	
-	
-}
-
-class InvalidDummyPreset extends Preset {}
