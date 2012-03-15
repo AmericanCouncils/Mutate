@@ -168,6 +168,8 @@ class Transcoder {
 			//re-throw exception so environment can handle appropriately
 			throw $e;
 		}
+		
+		return false;
 	}
 	
 	/**
@@ -181,12 +183,15 @@ class Transcoder {
 	 * @param string $failMode - flag for how to handle failed transcodes
 	 * @return \AC\Mutate\File
 	 */
-	public function transcodeWithAdapter($inFile, $adapterName, $outFile = false, $options = array(), $conflictMode = self::ONCONFLICT_INCREMENT, $dirMode = self::ONDIR_EXCEPTION, $failMode = self::ONFAIL_DELETE) {
+	public function transcodeWithAdapter($inFile, $adapterName, $options = array(), $outFile = false, $conflictMode = self::ONCONFLICT_INCREMENT, $dirMode = self::ONDIR_EXCEPTION, $failMode = self::ONFAIL_DELETE) {
 		//build a preset on the fly based on the options provided
 		$preset = new Preset('dynamic', $adapterName, $options);
 		return $this->transcodeWithPreset($inFile, $preset, $outFile, $conflictMode, $dirMode, $failMode);
 	}
 	
+	/**
+	 * TODO: implement eventually...
+	 */
 	public function transcodeWithJob($inFile, $job, $conflictMode = self::ONCONFLICT_INCREMENT, $dirMode = self::ONDIR_CREATE, $failMode = self::ONFAIL_DELETE) {
 		
 		if(!$job instanceof Job) {
@@ -198,13 +203,22 @@ class Transcoder {
 		
 	}
 
+	/**
+	 * Scan an output path to make sure there are no conflicts.  Handle conflicts according to mode.  Check to make sure final path is actually writable.
+	 * Returns the final output path, which may have been altered depending on the mode.
+	 *
+	 * @param string $outputPath 
+	 * @param string $conflictMode 
+	 * @param string $dirMode 
+	 * @return string
+	 */
 	protected function processOutputFilepath($outputPath, $conflictMode, $dirMode) {
 		$outputIsDirectory = $this->pathIsDirectory($outputPath);
 
 		//check for pre-existing file and handle based on conflict mode
 		if(file_exists($outputPath)) {
 			if($conflictMode === self::ONCONFLICT_EXCEPTION) {
-				throw new Exception\FileAlreadyExistsException("Transcode cannot run because file %s already exists.");
+				throw new Exception\FileAlreadyExistsException(sprintf("File %s already exists.", $outputPath));
 			}
 			
 			if($conflictMode === self::ONCONFLICT_DELETE) {
@@ -249,6 +263,12 @@ class Transcoder {
 		return $outputPath;
 	}
 	
+	/**
+	 * If a previous file exists, create a new path, numerically incrementing a number in the string to avoid conflicts.
+	 *
+	 * @param string $path 
+	 * @return string
+	 */
 	protected function incrementConflictingPath($path) {
 		$isDir = $this->pathIsDirectory($path);
 		$expPath = explode(DIRECTORY_SEPARATOR, $path);
@@ -274,6 +294,12 @@ class Transcoder {
 		return $newFileName;
 	}
 
+	/**
+	 * Remove a directory and all of its contents
+	 *
+	 * @param string $path 
+	 * @return void
+	 */
 	protected function removeDirectory($path) {
 		foreach(scandir($path) as $item) {
 			if(!in_array($item, array('.','..'))) {
@@ -285,7 +311,13 @@ class Transcoder {
 			throw new Exception\FilePermissionException(sprintf("Could not remove directory %s", $path));
 		}
 	}
-		
+	
+	/**
+	 * Return boolean if a given path is likely a directory (this isn't just for pre-existing files)
+	 *
+	 * @param string $path 
+	 * @return boolean true or false
+	 */
 	protected function pathIsDirectory($path) {
 		$exp = explode(DIRECTORY_SEPARATOR, $path);
 		$name = end($exp);
@@ -294,6 +326,12 @@ class Transcoder {
 		return !(count($exp) >= 2);
 	}
 	
+	/**
+	 * Post process newly created files by setting proper file permissions based on set permission modes
+	 *
+	 * @param File $file 
+	 * @return void
+	 */
 	protected function cleanOutputFile(File $file) {
 		if($file->isDir()) {
 			chmod($file->getRealPath(), $this->getDirectoryCreationMode());
@@ -302,7 +340,17 @@ class Transcoder {
 		}
 	}
 	
-	protected function cleanFailedTranscode($adapter, $outputFilePath, $failMode) {
+	/**
+	 * Cleanup after a failed transcode - this may entail deleting newly created files, depending on the mode in which the transcode process executed
+	 *
+	 * This will also call the corresponding `Adapter::cleanFailedTranscode()` method for the adapter that was used.
+	 *
+	 * @param AC\Mutate\Adapter $adapter 
+	 * @param string $outputFilePath 
+	 * @param string $failMode 
+	 * @return void
+	 */
+	protected function cleanFailedTranscode(Adapter $adapter, $outputFilePath, $failMode) {
 		if(file_exists($outputFilePath)) {
 			if($failMode === self::ONFAIL_DELETE) {
 				@unlink($outputFilePath);
@@ -311,12 +359,24 @@ class Transcoder {
 		
 		$adapter->cleanFailedTranscode($outputFilePath);
 	}
-		
+	
+	/**
+	 * Register a transcode event listener
+	 *
+	 * @param TranscodeEventListener $listener 
+	 * @return self
+	 */
 	public function registerListener(TranscodeEventListener $listener) {
 		$this->listeners[get_class($listener)] = $listener;
 		return $this;
 	}
 	
+	/**
+	 * Remove a transcode event listener by fully-qualified class-name
+	 *
+	 * @param string $className  -  the fully qualified class name of the registered listener
+	 * @return self
+	 */
 	public function removeListener($className) {
 		if(isset($this->listeners[$className])) {
 			unset($this->listeners[$className]);
@@ -325,6 +385,12 @@ class Transcoder {
 		return $this;
 	}
 	
+	/**
+	 * Return true if Transcoder has a listener with the given class name.
+	 *
+	 * @param string $className  -  the fully qualified class name of the registered listener
+	 * @return true
+	 */
 	public function hasListener($className) {
 		return isset($this->listeners[$className]);
 	}
@@ -332,6 +398,7 @@ class Transcoder {
 	/**
 	 * Call all listeners with the given function name and any arguments provided.  This implementation is likely to change.
 	 *
+	 * @return true
 	 */
 	protected function dispatch() {
 		try {
@@ -350,121 +417,234 @@ class Transcoder {
 		return true;
 	}
 	
-	public function getAdapter($name) {
-		if(!isset($this->adapters[$name])) {
-			throw new Exception\AdapterNotFoundException(sprintf("Requested adapter %s was not found in the Transcoder.", $name));
+	/**
+	 * Return an adapter instance by key
+	 *
+	 * @param string $key 
+	 * @return AC\Mutate\Adapter on success, throws exception if not found
+	 */
+	public function getAdapter($key) {
+		if(!isset($this->adapters[$key])) {
+			throw new Exception\AdapterNotFoundException(sprintf("Requested adapter %s was not found in the Transcoder.", $key));
 		}
 		
-		return $this->adapters[$name];
+		return $this->adapters[$key];
 	}
 	
-	public function hasAdapter($name) {
-		return isset($this->adapters[$name]);
+	/**
+	 * Return true of Transcoder has an Adapter with the given key
+	 *
+	 * @param string $key 
+	 * @return boolean
+	 */
+	public function hasAdapter($key) {
+		return isset($this->adapters[$key]);
 	}
 	
+	/**
+	 * Register an adapter instance with the Transcoder
+	 *
+	 * @param Adapter $adapter 
+	 * @return self
+	 */
 	public function registerAdapter(Adapter $adapter) {
 		$this->adapters[$adapter->getKey()] = $adapter;
 
 		return $this;
 	}
 	
-	public function removeAdapter($name) {
-		if(isset($this->adapters[$name])) {
-			unset($this->adapters[$name]);
+	/**
+	 * Remove an adapter instance with the given key from the Transcoder
+	 *
+	 * @param string $key 
+	 * @return self
+	 */
+	public function removeAdapter($key) {
+		if(isset($this->adapters[$key])) {
+			unset($this->adapters[$key]);
 		}
 
 		return $this;
 	}
 	
+	/**
+	 * Return array of all adapters registered with the Transcoder
+	 *
+	 * @return array
+	 */
 	public function getAdapters() {
 		return $this->adapters;
 	}
 	
-	public function getPreset($name) {
-		if(!isset($this->presets[$name])) {
-			throw new Exception\PresetNotFoundException(sprintf("Requested preset %s was not found in the Transcoder.", $name));
+	/**
+	 * Get a preset instance with the given key
+	 *
+	 * @param string $key 
+	 * @return AC\Mutate\Preset
+	 */
+	public function getPreset($key) {
+		if(!isset($this->presets[$key])) {
+			throw new Exception\PresetNotFoundException(sprintf("Requested preset %s was not found in the Transcoder.", $key));
 		}
 
-		return $this->presets[$name];
+		return $this->presets[$key];
 	}
 	
-	public function hasPreset($name) {
-		return isset($this->presets[$name]);
+	/**
+	 * Return true if Preset with the given key is available
+	 *
+	 * @param string $key 
+	 * @return boolean
+	 */
+	public function hasPreset($key) {
+		return isset($this->presets[$key]);
 	}
 	
+	/**
+	 * Register a new preset instance
+	 *
+	 * @param Preset $preset 
+	 * @return self
+	 */
 	public function registerPreset(Preset $preset) {
 		$this->presets[$preset->getKey()] = $preset;
 
 		return $this;
 	}
 	
-	public function removePreset($name) {
-		if(isset($this->presets[$name])) {
-			unset($this->presets[$name]);
+	/**
+	 * Remove a preset with the given key
+	 *
+	 * @param string $key 
+	 * @return self
+	 */
+	public function removePreset($key) {
+		if(isset($this->presets[$key])) {
+			unset($this->presets[$key]);
 		}
 
 		return $this;
 	}
 	
+	/**
+	 * Get array of all registered Presets
+	 *
+	 * @return array
+	 */
 	public function getPresets() {
 		return $this->presets;
 	}
 	
-	public function getJob($name) {
-		if(!isset($this->jobs[$name])) {
-			throw new Exception\JobNotFoundException(sprintf("Requested job %s was not found in the Transcoder.", $name));
+	/**
+	 * Get a job by the given key
+	 *
+	 * @param string $key 
+	 * @return AC\Mutate\Job
+	 */
+	public function getJob($key) {
+		if(!isset($this->jobs[$key])) {
+			throw new Exception\JobNotFoundException(sprintf("Requested job %s was not found in the Transcoder.", $key));
 		}
 
-		return $this->jobs[$name];
+		return $this->jobs[$key];
 	}
 	
-	public function hasJob($name) {
-		return isset($this->jobs[$name]);
+	/**
+	 * Return true/false if Job with given key is registered
+	 *
+	 * @param string $key 
+	 * @return boolean
+	 */
+	public function hasJob($key) {
+		return isset($this->jobs[$key]);
 	}
 	
+	/**
+	 * Register a job instance
+	 *
+	 * @param Job $job 
+	 * @return self
+	 */
 	public function registerJob(Job $job) {
 		$this->jobs[$job->getKey()] = $job;
 
 		return $this;
 	}
 	
-	public function removeJob($name) {
-		if(isset($this->jobs[$name])) {
-			unset($this->jobs[$name]);
+	/**
+	 * Remove a job with the given key
+	 *
+	 * @param string $key 
+	 * @return self
+	 */
+	public function removeJob($key) {
+		if(isset($this->jobs[$key])) {
+			unset($this->jobs[$key]);
 		}
 
 		return $this;
 	}
 	
+	/**
+	 * Get array of all registered Jobs
+	 *
+	 * @return array
+	 */
 	public function getJobs() {
 		return $this->jobs;
 	}
 	
+	/**
+	 * Set the file creation mode used when new files are created during a transcode process
+	 *
+	 * @return int (octal)
+	 */
 	public function getFileCreationMode() {
 		return $this->fileCreationMode;
 	}
 	
+	/**
+	 * Set the file creation mode to use when new files are created during a transcode process.
+	 *
+	 * Note you can set the property as either a string or octal int, but it will always be converted to the octal format required by `chmod`
+	 *
+	 * @param string|int $mode 
+	 * @return self
+	 */
 	public function setFileCreationMode($mode) {
 		//force format into octal if a string was received, for example "755" instead of 0755
 		if(0 != $mode[0]) {
 			$mode = "0".$mode;
 		}
 
-		$this->fileCreationMode = (int) $mode;
+		$this->fileCreationMode = intval($mode, 8);
 		return $this;
 	}
 	
+	/**
+	 * Get the directory creation mode used when creating new directories.
+	 *
+	 * @return int (octal)
+	 */
 	public function getDirectoryCreationMode() {
 		return $this->directoryCreationMode;
 	}
-	
+		
+	/**
+	 * Set the file creation mode to use when new directories are created during a transcode process.
+	 *
+	 * Note you can set the property as either a string or octal int, but it will always be converted to the octal format required by `chmod`
+	 *
+	 * @param string|int $mode 
+	 * @return self
+	 */
 	public function setDirectoryCreationMode($mode) {
 		//force format into octal if a string was received, for example "755" instead of 0755
 		if(0 != $mode[0]) {
 			$mode = "0".$mode;
 		}
 
-		$this->directoryCreationMode = (int) $mode;
+		$this->directoryCreationMode = intval($mode, 8);
 		return $this;
 	}
 	

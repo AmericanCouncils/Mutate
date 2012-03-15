@@ -3,6 +3,7 @@
 namespace AC\Mutate;
 
 class Job extends Preset {
+	protected $key;
     protected $name;
     protected $description;
 	
@@ -18,12 +19,11 @@ class Job extends Preset {
         $newFiles = array();
         
         //chain multiple presets on one file
-        $this->addFile($this->runPreset('video_to_mp4_high', $inFile)->);
-        $newFiles[] = $this->runPreset($newFiles[1], 'video_to_mp4_high');
-        $newFiles[] = $this->runPreset($inFile, 'video_thumb_high');
-        $newFiles[] = $this->runPreset($inFile, 'video_thumb_high');
-        $newFiles[] = $this->runPreset($inFile, 'video_thumb_high');
-        $newFiles[] = $this->runPreset($inFile, 'video_thumb_high');
+		$this->addStep()
+		$steps = array(
+			$this->newStep()->setInput($inFile)->runPreset('video_to_mp4_high')->runPreset('video_to_mp4_low'),
+			$this->newStep()->setInput($step1->getOutput())->runPreset();
+		);
     }
     
     public function execute($inFile, $outputFilePath) {

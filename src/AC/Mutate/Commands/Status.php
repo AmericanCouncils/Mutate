@@ -8,7 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\Output;
 
-class TranscoderStatus extends Command {
+class Status extends Command {
 	protected $name = "status";
 	protected $description = "Show status of all available adapters, and list usable presets.";
 	
@@ -47,7 +47,6 @@ class TranscoderStatus extends Command {
 				$output->writeln($formatter->formatBlock($preset->getName()." (".$preset->getKey().")", 'comment').": ".$formatter->formatBlock($preset->getDescription(), 'info'));
 			}
 		}
-		
 		
 		return true;
 	}
