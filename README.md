@@ -282,8 +282,7 @@ Important public API changes will be tracked in the *CHANGELOG.md* file once the
 
 ## Version Roadmap ##
 
-* 0.6.0                - you are here
-* For 0.7.0            - implement commands which don't utilize jobs
+* For 0.7.0            - You are here
 * For 0.8.0            - implement jobs, finalize API, unit test them
 * For 0.9.0            - implement remaining job commands
 * For 1.0.0-alpha.1    - implement finalize and test default adapters/presets/jobs
