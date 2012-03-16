@@ -167,7 +167,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredExtension('mp3');
 		$outputPath = '/foo/';
-		$expected = '/foo/'.substr($f->getFilename(), 0, -4).".mp3";
+		$expected = '/foo/'.substr($f->getFilename(), 0, -4).".".$p->getKey().".mp3";
 		$this->assertSame($expected, $p->generateOutputPath($f, $outputPath));
 	}
 
@@ -176,7 +176,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredExtension('mp3');
 		$outputPath = '/foo';
-		$expected = '/foo/'.substr($f->getFilename(), 0, -4).".mp3";
+		$expected = '/foo/'.substr($f->getFilename(), 0, -4).".".$p->getKey().".mp3";
 		$this->assertSame($expected, $p->generateOutputPath($f, $outputPath));
 	}
 
@@ -185,7 +185,7 @@ class PresetTest extends \PHPUnit_Framework_TestCase {
 		$p = new Mock\DummyPreset;
 		$p->getOutputDefinition()->setRequiredExtension('mp3');
 		$outputPath = '/foo/../';
-		$expected = '/foo/../'.substr($f->getFilename(), 0, -4).".mp3";
+		$expected = '/foo/../'.substr($f->getFilename(), 0, -4).".".$p->getKey().".mp3";
 		$this->assertSame($expected, $p->generateOutputPath($f, $outputPath));
 	}
 	

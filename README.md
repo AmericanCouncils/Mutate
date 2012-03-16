@@ -89,22 +89,25 @@ To simply transcode a file from one format to another, given a preset, you can u
 
 The lines in the example above invoke the stand-alone app, which runs commands that use the Transcoder.  You can use the Transcoder by its self in your own code, which is detailed in the following the sections.  However, you can also use the stand-alone app in your own code if need-be.  When run in the manner described in the next code example, exceptions will not be caught - it's up to your code to handle them properly.
 
-	//instantiate it, which will automatically register the presets/adapters/jobs provided with the library
-	$app = new \AC\Mutate\Application\Application;
-	
-	//run the command as if it were being run directly from the command line
-	$status = $app->runCommand(sprintf("transcode %s %s %s", $inFilePath, $presetName, $outFilePath));
+```php
 
-	//get the output buffer, which in this case is a simple array of logged messages
-	$output = $app->getOutput();
+//instantiate it, which will automatically register the presets/adapters/jobs provided with the library
+$app = new \AC\Mutate\Application\Application;
 	
-	//your transcoded file
-	$file = new \SplFileObject($outFilePath);
-	
-	//alternatively, you could get the Transcoder created by the Application directly:
-	$transcoder = $app->getTranscoder();
-	$transcoder->transcodeWithPreset(/* options */);
+//run the command as if it were being run directly from the command line
+$status = $app->runCommand(sprintf("transcode %s %s %s", $inFilePath, $presetName, $outFilePath));
 
+//get the output buffer, which in this case is a simple array of logged messages
+$output = $app->getOutput();
+	
+//your transcoded file
+$file = new \SplFileObject($outFilePath);
+	
+//alternatively, you could get the Transcoder created by the Application directly:
+$transcoder = $app->getTranscoder();
+$transcoder->transcodeWithPreset(/* options */);
+
+```
 # Implementation Details & Example Usage #
 
 If you intend to plug Mutate into another framework, or extend it in any way, then knowing the details about how it's built will help.  The core library doesn't actually have any dependencies - the dependencies that are installed as part of the install process are there to make the library usable as a standalone project, and to provide some tools for specific transcoding adapters to leverage.  If you just want to use/extend the core library directly, then the code found in the `src/AC/Mutate` and `src/AC/Mutate/Exception` directories is all you really need.
@@ -279,8 +282,7 @@ Important public API changes will be tracked in the *CHANGELOG.md* file once the
 
 ## Version Roadmap ##
 
-* 0.6.0                - you are here
-* For 0.7.0            - implement commands which don't utilize jobs
+* For 0.7.0            - You are here
 * For 0.8.0            - implement jobs, finalize API, unit test them
 * For 0.9.0            - implement remaining job commands
 * For 1.0.0-alpha.1    - implement finalize and test default adapters/presets/jobs
@@ -295,24 +297,14 @@ We will keep track of where we are in regards to specific tasks here.
 
 Todo list:
 
-* Unit test Adapter
-* Unit test and document Transcoder
-* Commands:
-	* Add conflict/mode flag options to transcode commands
-	* Implement all non-job related commands
-	* Batch transcode commands
-		* `transcode:batch [pattern]`
-		* `transcode:batch:adapter [pattern]`
-		* `transcode:batch:job [pattern]`
-	* `finfo` - display all available file info for a given path
-	* `preset:show key` - display info for preset
-	* `adapter:show key` - display info for adapter
-	* `job:show key` - display info for adapter
+* Unit test Transcoder
 * Implement jobs
 	* Allow chained presets on one output file
 	* Allow creation of multiple output files
 	* Questions:
 		* Treat this as an extension of a preset?  Probably...
+* Commands:
+	* Implement job commands
 * Create Adapters:
 	* Handbrake
 	* FFmpeg

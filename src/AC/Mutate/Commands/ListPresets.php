@@ -13,7 +13,19 @@ class ListPresets extends Command {
 	protected $description = "Lists registered presets by their name and class, organized by adapter.";
 	
     protected function execute(InputInterface $input, OutputInterface $output) {
-		throw new \RuntimeException("Command not yet implemented.");
+		$formatter = $this->getHelper('formatter');
+
+		$output->writeln("Available Presets:");
+
+		foreach($this->getTranscoder()->getPresets() as $preset) {
+			$output->writeln($formatter->formatBlock(sprintf(
+				"\"%s\"  (%s): %s",
+				$preset->getName(),
+				$preset->getKey(),
+				$formatter->formatBlock($preset->getDescription(), 'info')
+			), 'comment'));
+		}
 		
+		return true;
 	}
 }

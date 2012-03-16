@@ -1,9 +1,11 @@
 vendor/
 composer.phar
-composer.lock
 presets/
 adapters/
 jobs/
 !jobs/README.md
 !presets/README.md
 !adapters/README.md
+!src/AC/Mutate/Presets
+!src/AC/Mutate/Adapters
+!src/AC/Mutate/Jobs

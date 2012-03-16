@@ -13,7 +13,20 @@ class ListAdapters extends Command {
 	protected $description = "Lists registered adapters by their name and class.";
 	
     protected function execute(InputInterface $input, OutputInterface $output) {
-		throw new \RuntimeException("Command not yet implemented.");
+		$formatter = $this->getHelper('formatter');
+
+		$output->writeln("Available Adapters:");
+
+		foreach($this->getTranscoder()->getAdapters() as $adapter) {
+			$output->writeln($formatter->formatBlock(sprintf(
+				"\"%s\"  (%s): %s",
+				$adapter->getName(),
+				$adapter->getKey(),
+				$formatter->formatBlock($adapter->getDescription(), 'info')
+			), 'comment'));
+		}
 		
+		return true;
 	}
+
 }

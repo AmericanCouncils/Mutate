@@ -2,7 +2,7 @@
 
 namespace AC\Mutate;
 
-class Preset implements \ArrayAccess, \Serializable {
+class Preset implements \ArrayAccess, \Serializable, \IteratorAggregate {
 	
 	/**
 	 * A machine-key string name for the preset.  Should be lower-cased with underscores.
@@ -282,11 +282,8 @@ class Preset implements \ArrayAccess, \Serializable {
 					//get proper output extension
 					$outputExtension = $this->resolveOutputExtension($inFile);
 					
-					//if the output directory contains the input file, we should infix the preset name of the output file
-					$contains = file_exists($outputPath.DIRECTORY_SEPARATOR.$inFile->getFilename());
-					return $contains ? 
-						$outputPath.DIRECTORY_SEPARATOR.$baseName.".".$this->getKey().".".$outputExtension :
-						$outputPath.DIRECTORY_SEPARATOR.$baseName.".".$outputExtension;
+					//default to infixing the preset key of the output file to avoid confusing
+					return $outputPath.DIRECTORY_SEPARATOR.$baseName.".".$this->getKey().".".$outputExtension;
 				}
 			}
 		}
@@ -298,7 +295,7 @@ class Preset implements \ArrayAccess, \Serializable {
 				//default to creating directory named by preset
 				return $inputDirectory.DIRECTORY_SEPARATOR.$this->getKey();
 			} else {
-				//otherwise default to creating new file path with format infileName.presetName.required_or_inheritedExtension
+				//otherwise default to creating new file path with format infileName.presetKey.required_or_inheritedExtension
 				$outputExtension = $this->resolveOutputExtension($inFile);
 				
 				//get input filename without it's extension
@@ -411,6 +408,15 @@ class Preset implements \ArrayAccess, \Serializable {
 	}
 	
 	/**
+	 * Return array of all options.
+	 *
+	 * @return array
+	 */
+	public function getOptions() {
+		return $this->options;
+	}
+	
+	/**
 	 * Sets 'locked' property to true, so that no new options can be set or removed.
 	 */
 	public function lock() {
@@ -517,5 +523,12 @@ class Preset implements \ArrayAccess, \Serializable {
 		foreach($data as $key => $val) {
 			$this->$key = $val;
 		}
+	}
+	
+	/**
+	 * Implements \IteratorAggregate
+	 */
+	public function getIterator() {
+		return new \ArrayIterator($this->options);
 	}
 }

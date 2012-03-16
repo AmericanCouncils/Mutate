@@ -1,0 +1,26 @@
+{
+    "hash": "b7e77450b98e11f708497783485407da",
+    "packages": [
+        {
+            "package": "symfony/class-loader",
+            "version": "dev-master",
+            "source-reference": "8bceaa2f1fed52f6285b2cea39e7ae37fbea1c9b"
+        },
+        {
+            "package": "symfony/console",
+            "version": "dev-master",
+            "source-reference": "2ee50c7c845ef7f8bce9c540709ecfd64cbcda87"
+        },
+        {
+            "package": "symfony/finder",
+            "version": "dev-master",
+            "source-reference": "b3adc8d5c29593db93c0abc4711a1e25fd3a6fa0"
+        },
+        {
+            "package": "symfony/process",
+            "version": "dev-master",
+            "source-reference": "6aceac404d8574cf7da57e7e29b00a665b7bd559"
+        }
+    ],
+    "aliases": []
+}
