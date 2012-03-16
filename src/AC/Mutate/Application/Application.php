@@ -73,11 +73,14 @@ class Application extends BaseApplication {
 	 */
 	protected function getDefaultCommands() {
 		$commands = parent::getDefaultCommands();
-	
-		foreach(scandir(__DIR__."/../Commands") as $item) {
-			if(!in_array($item, array('.','..'))) {
-				$class = substr("AC\\Mutate\\Commands\\".$item, 0, -4); //get rid of ".php"
-				$commands[] = new $class;
+		
+		$dir = __DIR__."/../Commands";
+		if(file_exists($dir)) {
+			foreach(scandir($dir) as $item) {
+				if(!in_array($item, array('.','..'))) {
+					$class = substr("AC\\Mutate\\Commands\\".$item, 0, -4); //get rid of ".php"
+					$commands[] = new $class;
+				}
 			}
 		}
 	
@@ -105,10 +108,13 @@ class Application extends BaseApplication {
 	protected function getDefaultAdapters() {
 		$items = array();
 
-		foreach(scandir(__DIR__."/../Adapters") as $item) {
-			if(strpos($item, '.php')) {
-				$class = substr("AC\\Mutate\\Adapters\\".$item, 0, -4); //get rid of ".php"
-				$items[] = new $class;
+		$dir = __DIR__."/../Adapters";
+		if(file_exists($dir)) {
+			foreach(scandir($dir) as $item) {
+				if(strpos($item, '.php')) {
+					$class = substr("AC\\Mutate\\Adapters\\".$item, 0, -4); //get rid of ".php"
+					$items[] = new $class;
+				}
 			}
 		}
 		
@@ -122,11 +128,14 @@ class Application extends BaseApplication {
 	 */
 	protected function getDefaultPresets() {
 		$items = array();
-
-		foreach(scandir(__DIR__."/../Presets") as $item) {
-			if(strpos($item, '.php')) {
-				$class = substr("AC\\Mutate\\Presets\\".$item, 0, -4); //get rid of ".php"
-				$items[] = new $class;
+		
+		$dir = __DIR__."/../Presets";
+		if(file_exists($dir)) {
+			foreach(scandir($dir) as $item) {
+				if(strpos($item, '.php')) {
+					$class = substr("AC\\Mutate\\Presets\\".$item, 0, -4); //get rid of ".php"
+					$items[] = new $class;
+				}
 			}
 		}
 		
@@ -140,11 +149,14 @@ class Application extends BaseApplication {
 	 */
 	protected function getDefaultJobs() {
 		$items = array();
-
-		foreach(scandir(__DIR__."/../Jobs") as $item) {
-			if(strpos($item, '.php')) {
-				$class = substr("AC\\Mutate\\Jobs\\".$item, 0, -4); //get rid of ".php"
-				$items[] = new $class;
+		
+		$dir = __DIR__."/../Jobs";
+		if(file_exists($dir)) {
+			foreach(scandir($dir) as $item) {
+				if(strpos($item, '.php')) {
+					$class = substr("AC\\Mutate\\Jobs\\".$item, 0, -4); //get rid of ".php"
+					$items[] = new $class;
+				}
 			}
 		}
 		
