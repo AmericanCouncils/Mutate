@@ -52,11 +52,12 @@ class Listener extends TranscodeEventListener {
 	/**
 	 * Write to output that a process has failed.
 	 */
-	public function onTranscodeFailure(File $inFile, Preset $preset, $outputFilePath, \Exception $e) {
+	public function onTranscodeFailure(\Exception $e, $inFilePath, $presetKey, $outputFilePath) {
 		$formatter = $this->getFormatter();
 		$msg = sprintf(
-			"Transcode of %s failed!",
-			$formatter->formatBlock($inFile->getRealPath(), 'info')
+			"Transcode of %s failed!  Message: %s",
+			$formatter->formatBlock($inFilePath, 'info'),
+			$formatter->formatBlock($e->getMessage(), 'error')
 		);
 			
 		$this->getOutput()->writeln($formatter->formatBlock($msg, 'comment'));

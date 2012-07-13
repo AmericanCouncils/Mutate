@@ -105,37 +105,55 @@ class Transcoder {
 	 */
 	public function transcodeWithPreset($inFile, $preset, $outFile = false, $conflictMode = self::ONCONFLICT_INCREMENT, $dirMode = self::ONDIR_EXCEPTION, $failMode = self::ONFAIL_DELETE) {
 
-		//get file
-		if(!$inFile instanceof File && is_string($inFile)) {
-			$inFile = new File($inFile);
-		}
+		//figure out input file path and preset key, without throwing exceptions
+		$inputPath = ($inFile instanceof File) ? $inFile->getRealPath() : $inFile;
+		$presetKey = ($preset instanceof Preset) ? $preset->getKey() : $preset;
+		$outFilePath = $outFile;
 		
-		//get preset
-		if(!$preset instanceof Preset) {
-			$preset = $this->getPreset($preset);
-		}
+		//validate all inputs before attempting to run the transcode process
+		try {
+			
+			//get file
+			if(!$inFile instanceof File && is_string($inFile)) {
+				$inFile = new File($inFile);
+			}
+		
+			//get preset
+			if(!$preset instanceof Preset) {
+				$preset = $this->getPreset($preset);
+			}
 				
-		//have preset validate file
-		$preset->validateInputFile($inFile);
+			//have preset validate file
+			$preset->validateInputFile($inFile);
 
-		//get adapter
-		$adapter = $this->getAdapter($preset->getRequiredAdapter());
+			//get adapter
+			$adapter = $this->getAdapter($preset->getRequiredAdapter());
 		
-		//verify if this adapter can work in the current environment (happens only the first time it's loaded)
-		if(!$adapter->verify()) {
-			throw new \RuntimeException($adapter->getVerificationError());
+			//verify if this adapter can work in the current environment (happens only the first time it's loaded)
+			if(!$adapter->verify()) {
+				throw new \RuntimeException($adapter->getVerificationError());
+			}
+		
+			//have adapter verify inputs
+			$adapter->validateInputFile($inFile);
+			$adapter->validatePreset($preset);
+		
+			//generate the final output string
+			$outFilePath = $preset->generateOutputPath($inFile, $outFile);
+		
+			//make sure the output path is valid, create any directories as necessary
+			$outFilePath = $this->processOutputFilepath($outFilePath, $conflictMode, $dirMode);
+			
+		} catch (\Exception $e) {
+			
+			//notify listener of failure
+			$this->dispatch('onTranscodeFailure', $e, $inputPath, $presetKey, $outFilePath);
+			
+			//rethrow for containing environment to handle
+			throw $e;
 		}
-		
-		//have adapter verify inputs
-		$adapter->validateInputFile($inFile);
-		$adapter->validatePreset($preset);
-		
-		//generate the final output string
-		$outFilePath = $preset->generateOutputPath($inFile, $outFile);
-		
-		//make sure the output path is valid, create any directories as necessary
-		$outFilePath = $this->processOutputFilepath($outFilePath, $conflictMode, $dirMode);
 
+		//attempt to run the actual transcode process
 		try {
 			//TODO: setup some type of logging
 			
@@ -158,12 +176,14 @@ class Transcoder {
 		
 			//return newly created file
 			return $return;
+			
 		} catch (\Exception $e) {
+			
 			//clean up files after failure
 			$this->cleanFailedTranscode($adapter, $outFilePath, $failMode);
 			
 			//notify listeners of failure
-			$this->dispatch('onTranscodeFailure', $inFile, $preset, $outFilePath, $e);
+			$this->dispatch('onTranscodeFailure', $e, $inFile->getRealPath(), $preset->getKey(), $outFilePath);
 			
 			//re-throw exception so environment can handle appropriately
 			throw $e;

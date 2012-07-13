@@ -42,12 +42,12 @@ abstract class TranscodeEventListener {
 	 * Note that this method gets called AFTER the Transcoder has already cleaned up from a failed process - meaning the intended output file, if it even was created in the first place, may
 	 * have already been deleted.
 	 *
-	 * @param File $inFile 
-	 * @param Preset $preset 
-	 * @param string $outputFilePath 
-	 * @param Exception $e 
+	 * @param Exception $e 					- the exception thrown, which stopped the process
+	 * @param string $inputFilePath 		- path of the input file as received
+	 * @param string $presetKey				- key of preset requested
+	 * @param string $outputFilePath 		- output file path as received
 	 */
-	public function onTranscodeFailure(File $inFile, Preset $preset, $outputFilePath, \Exception $e) {
+	public function onTranscodeFailure(\Exception $e, $inputFilePath, $presetKey, $outputFilePath) {
 		return;
 	}
 
