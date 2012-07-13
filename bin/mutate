@@ -12,7 +12,7 @@ To see how to properly specify classes in those directories, see the README.md f
 
 use \AC\Mutate\Application\Application;
 
-require(__DIR__."/../vendor/.composer/autoload.php");
+require(__DIR__."/../vendor/autoload.php");
 
 function register_objects_by_type(Application $app, $type) {
 	$path = __DIR__."/../".$type."s/";
