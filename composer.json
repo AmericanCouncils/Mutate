@@ -11,15 +11,19 @@
             "email": "evan.villemez@americancouncils.org"
         },
         {
+            "name": "Andrew Freix"
+        },
+        {
             "name": "Jay Hebert"
         }
     ],
     "require": {
         "php": ">=5.3.2",
-		"symfony/console": "master-dev",
-		"symfony/process": "master-dev",
-		"symfony/finder": "master-dev",
-		"symfony/class-loader": "master-dev"
+        "ext-fileinfo": "*",
+        "symfony/console": "dev-master",
+        "symfony/process": "dev-master",
+        "symfony/finder": "dev-master",
+        "symfony/class-loader": "dev-master"
     },
     "autoload": {
         "psr-0": { "AC\\Mutate": "src/" }

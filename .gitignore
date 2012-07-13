@@ -9,3 +9,4 @@ jobs/
 !src/AC/Mutate/Presets
 !src/AC/Mutate/Adapters
 !src/AC/Mutate/Jobs
+*.DS_Store
