@@ -2,8 +2,8 @@
 
 return array(
     'log.enabled' => true,
-    'log.path' => '/var/log/mutate.log',
-    'log.level' => Monolog\Logger::WARNING,
+    'log.path' => __DIR__.'/logs/mutate.log',
+    'log.level' => Monolog\Logger::INFO,
     'handbrake.path' => "/usr/local/bin/HandBrakeCLI",
     'ffmpeg.path' => ""
 );

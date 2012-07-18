@@ -24,7 +24,7 @@ class Status extends Command
             foreach ($adapters as $adapter) {
                 $msg = $adapter->verify() ? "Verified." : $adapter->getVerificationError();
                 $msg = $adapter->verify() ? $formatter->formatBlock($msg, 'info') : $formatter->formatBlock($msg, 'error');
-                $output->writeln($formatter->formatBlock($adapter->getName().":      ".$msg, 'comment'));
+                $output->writeln($formatter->formatBlock($adapter->getName().":      ", 'comment').$msg);
             }
         }
 

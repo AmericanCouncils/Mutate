@@ -1,44 +1,15 @@
 #!/usr/bin/env php 
 <?php
-/*
-Note that this script will check for classes in the top-level adapter/presets/jobs directories provided with the library.  If any classes are found
-in those directories, they will automatically be registered.  By default these directories are empty, they're simply there as a convenient place to put
-code when the library is being used in a stand-alone manner.
 
-If those directories aren't present, then only the adapters/presets/jobs provided with the library will be registered.
-
-To see how to properly specify classes in those directories, see the README.md file in the root of this library.
-*/
+/**
+ * For convenience, you can make this script executable by running "chmod a+x bin/mutate", this will let you run 'mutate' without having to type "php mutate"
+ *
+ * @author Evan Villemez
+ */
 
 use \AC\Mutate\Application\Application;
 
 require(__DIR__."/../vendor/autoload.php");
 
-function register_objects_by_type(Application $app, $type) {
-	$path = __DIR__."/../".$type."s/";
-	$registrationMethod = 'register'.ucfirst(strtolower($type));
-	
-	//scan directory to look for user-provided objects of specific type, then register them with the Transcoder
-	if(file_exists($path)) {
-		foreach(scandir($path) as $item) {
-			if('.php' === strtolower(substr($item, 0, -4))) {
-				if(@include_once($path.$item)) {
-					$class = substr($item, 0, -4); //get rid of ".php"
-					if(class_exists($class, false)) {				
-						$application->getTranscoder()->$registrationMethod(new $class);
-					}
-				}
-			}
-		}
-	}
-}
-
-$app = new Application;
-
-register_objects_by_type($app, 'adapter');
-register_objects_by_type($app, 'preset');
-register_objects_by_type($app, 'job');
-
-//TODO: consider custom commands as well
-
+$app = new Application(include(__DIR__."/../mutate.conf.php"));
 $app->run();

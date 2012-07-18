@@ -33,27 +33,27 @@ class TranscodeLogSubscriber implements EventSubscriberInterface
 
     public function onBeforeTranscode(TranscodeEvent $e)
     {
-        $inpath = $e->getInputFile()->getRealPath();
-        $presetKey = $e->getPreset()->getKey();
+        $inpath = $e->getInputPath();
+        $presetKey = $e->getPreset();
         $outpath = $e->getOutputPath();
         $this->container['logger']->addInfo(sprintf("Beginning transcode of [%s] to [%s] with preset [%s]", $inpath, $presetKey, $outpath));
     }
 
     public function onAfterTranscode(TranscodeEvent $e)
     {
-        $inpath = $e->getInputFile()->getRealPath();
-        $presetKey = $e->getPreset()->getKey();
+        $inpath = $e->getInputPath();
+        $presetKey = $e->getPreset();
         $outpath = $e->getOutputPath();
         $this->container['logger']->addInfo(sprintf("Finished transcode of [%s] to [%s] with preset [%s]", $inpath, $presetKey, $outpath));
     }
 
     public function onTranscodeError(TranscodeEvent $e)
     {
-        $inpath = $e->getInputFile()->getRealPath();
-        $presetKey = $e->getPreset()->getKey();
+        $inpath = $e->getInputPath();
+        $presetKey = $e->getPreset();
         $outpath = $e->getOutputPath();
         $exception = $e->getException();
-        $this->container['logger']->addError(sprintf("Encountered error [%s] during transcode of %s to %s", $exception->getMessage(), $inpath, $outpath));
+        $this->container['logger']->addError(sprintf("Encountered error [%s] during transcode of [%s] to [%s]", $exception->getMessage(), $inpath, $outpath));
     }
 
 }

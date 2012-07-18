@@ -4,7 +4,7 @@ namespace AC\Mutate\Application;
 use \Symfony\Component\Console\Command\Command as BaseCommand;
 
 /**
- * Base Mutate Command provides easy access to the Transcoder instance, which the MutateApplication should have created.
+ * Base Mutate Command provides easy access to the Transcoder instance, created by the Application.
  *
  * @package default
  * @author Evan Villemez

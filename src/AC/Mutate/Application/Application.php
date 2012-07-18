@@ -16,14 +16,36 @@ class Application extends BaseApplication
     const VERSION = '0.8.0';
 
     private $transcoder = false;
-
+    
+    /**
+     * Construct app, build the Transcoder, register error handler.
+     *
+     * @param array $config - array of configuration passed to Transcoder
+     */
     public function __construct($config = array())
     {
+        set_error_handler(array($this, 'handleError'));
+        
         parent::__construct("Mutate File Transcoder", self::VERSION);
 
         //build transcoder
         $this->transcoder = new Transcoder($config);
 
+    }
+
+    /**
+     * Convert PHP errors to exceptions for consistency
+     *
+     * @param string $no 
+     * @param string $str 
+     * @param string $file 
+     * @param string $line 
+     * @return void
+     * @throws ErrorException
+     */
+    public function handleError($no, $str, $file, $line)
+    {
+        throw new \ErrorException($str, $no, 0, $file, $line);
     }
 
     /**
@@ -97,16 +119,6 @@ class Application extends BaseApplication
         $listener->setOutput($output);
         $listener->setHelperSet($this->getHelperSet());
         $this->getTranscoder()->addSubscriber($listener);
-
-        //TODO: consider removing interactive shell, probably no real reason to have it
-
-        if (true === $input->hasParameterOption(array('--shell', '-s'))) {
-
-            $shell = new Shell($this);
-            $shell->run();
-
-            return 0;
-        }
 
         return parent::doRun($input, $output);
     }

@@ -2,6 +2,7 @@
 
 namespace AC\Mutate\Application;
 use AC\Component\Transcoding\File;
+use AC\Component\Transcoding\Event\MessageEvent;
 use AC\Component\Transcoding\Event\TranscodeEvent;
 use AC\Component\Transcoding\Event\TranscodeEvents;
 use \Symfony\Component\Console\Output\Output;
@@ -21,10 +22,26 @@ class CliOutputSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return array(
-            TranscodeEvents::BEFORE => array('onTranscodeStart'),
-            TranscodeEvents::AFTER => array('onTranscodeComplete'),
-            TranscodeEvents::ERROR => array('onTranscodeFailure')
+            TranscodeEvents::BEFORE => 'onTranscodeStart',
+            TranscodeEvents::AFTER => 'onTranscodeComplete',
+            TranscodeEvents::ERROR => 'onTranscodeFailure',
+            TranscodeEvents::MESSAGE => 'onMessage'
         );
+    }
+    
+    /**
+     * Write any messages received by an adapter
+     */
+    public function onMessage(MessageEvent $e)
+    {
+        $formatter = $this->getFormatter();
+        $adapterKey = $e->getAdapter()->getKey();
+        $level = $e->getLevel();
+        $message = $e->getMessage();
+        
+        $msg = $formatter->formatBlock(sprintf("Adapter %s %s: %s", $adapterKey, $level, $message), 'comment');
+        
+        $this->getOutput()->writeln($msg);
     }
 
     /**
@@ -32,8 +49,8 @@ class CliOutputSubscriber implements EventSubscriberInterface
      */
     public function onTranscodeStart(TranscodeEvent $e)
     {
-        $inpath = $e->getInputFile()->getRealPath();
-        $presetKey = $e->getPreset()->getKey();
+        $inpath = $e->getInputPath();
+        $presetKey = $e->getPreset();
 
         $formatter = $this->getFormatter();
         $msg = sprintf(
@@ -41,7 +58,7 @@ class CliOutputSubscriber implements EventSubscriberInterface
             $formatter->formatBlock($inpath, 'info'),
             $formatter->formatBlock($presetKey, 'info'));
 
-        $this->getOutput()->writeln($formatter->formatBlock($msg, 'comment'));
+        $this->getOutput()->writeln($msg);
         $this->startTime = microtime(true);
     }
 
@@ -50,7 +67,7 @@ class CliOutputSubscriber implements EventSubscriberInterface
      */
     public function onTranscodeComplete(TranscodeEvent $e)
     {
-        $outpath = $e->getOutputFile()->getRealPath();
+        $outpath = $e->getOutputPath();
 
         $totalTime = microtime(true) - $this->startTime;
         $formatter = $this->getFormatter();
@@ -58,13 +75,13 @@ class CliOutputSubscriber implements EventSubscriberInterface
             "Transcode completed in %s ms.",
             $formatter->formatBlock(($totalTime * 1000), 'info')
         );
-        $this->getOutput()->writeln($formatter->formatBlock($msg, 'comment'));
+        $this->getOutput()->writeln($msg);
 
         $msg = sprintf(
             "Created new file %s",
             $formatter->formatBlock($outpath, 'info')
         );
-        $this->getOutput()->writeln($formatter->formatBlock($msg, 'comment'));
+        $this->getOutput()->writeln($msg);
     }
 
     /**
@@ -72,7 +89,7 @@ class CliOutputSubscriber implements EventSubscriberInterface
      */
     public function onTranscodeFailure(TranscodeEvent $e)
     {
-        $inpath = $e->getInputFile()->getRealpath();
+        $inpath = $e->getInputPath();
         $errorMsg = $e->getException()->getMessage();
 
         $formatter = $this->getFormatter();
@@ -82,7 +99,7 @@ class CliOutputSubscriber implements EventSubscriberInterface
             $formatter->formatBlock($errorMsg, 'error')
         );
 
-        $this->getOutput()->writeln($formatter->formatBlock($msg, 'comment'));
+        $this->getOutput()->writeln($msg);
     }
 
     protected function getFormatter()

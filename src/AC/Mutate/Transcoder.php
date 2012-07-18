@@ -15,6 +15,8 @@ use Monolog\Handler\StreamHandler;
 class Transcoder extends BaseTranscoder
 {
     protected $container;
+    
+    protected $adapterServices = array();
 
     /**
      * Constructor can take an array of configuration for use in the dependency injection container.
@@ -53,11 +55,13 @@ class Transcoder extends BaseTranscoder
     {
         //default logger service
         $this->container['logger'] = $this->container->share(function($c) {
-            return new Logger(new StreamHandler($c['log.path'], $c['log.level']));
+            $logger = new Logger('mutate');
+            $logger->pushHandler(new StreamHandler($c['log.path'], $c['log.level']));
+            return $logger;
         });
 
         //demo phptext adapter
-        $this->container['adapter.php_text'] = $this->container->share(function($c){
+        $this->registerAdapterService('php_text', function($c) {
             return new \AC\Component\Transcoding\Adapters\PhpText;
         });
 
@@ -111,11 +115,9 @@ class Transcoder extends BaseTranscoder
     public function getAdapters()
     {
         $adapters = array();
-        foreach ($this->container as $key => $val) {
-            $exp = explode($key);
-            if ($exp[0] === 'adapter') {
-                $adapters[$exp[1]] = $this->container[$key];
-            }
+        foreach ($this->adapterServices as $key) {
+            $exp = explode(".", $key);
+            $adapters[$exp[1]] = $this->container[$key];
         }
 
         return $adapters;
@@ -130,7 +132,8 @@ class Transcoder extends BaseTranscoder
      */
     public function registerAdapterService($name, $callable)
     {
-        $key = 'adapter.'.ltrim("adapter.", $name);
+        $key = 'adapter.'.$name;
+        $this->adapterServices[] = $key;
         $this->container[$key] = $this->container->share($callable);
     }
 }

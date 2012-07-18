@@ -5,6 +5,7 @@
     * container creation/logging maybe should happen in Application, not Transcoder... consider both approaches
 * Commands:
     * Compile to phar command
+    * self-update command
     * Status command
         * make it recognized registered adapters
         * also write out custom config and logfile status
