@@ -93,19 +93,6 @@ class Application extends BaseApplication
     }
 
     /**
-     * Modify the default InputDefinition to add entry for the interactive shell.
-     *
-     * @return Symfony\Component\Console\Input\InputDefinition
-     */
-    protected function getDefaultInputDefinition()
-    {
-        $def = parent::getDefaultInputDefinition();
-        $def->addOption(new InputOption('--shell', '-s', InputOption::VALUE_NONE, 'Enter the interactive shell.'));
-
-        return $def;
-    }
-
-    /**
      * Check for whether or not to run interactive shell
      *
      * @param  InputInterface  $input
@@ -141,6 +128,16 @@ class Application extends BaseApplication
     public function setTranscoder(Transcoder $t)
     {
         $this->transcoder = $t;
+    }
+    
+    /**
+     * Returns the long version of the application.
+     *
+     * @return string The long application version
+     */
+    public function getLongVersion()
+    {
+        return sprintf('<info>%s</info> version <comment>%s</comment> by <comment>Evan Villemez</comment>', $this->getName(), $this->getVersion());
     }
 
 }
