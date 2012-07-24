@@ -1,45 +1,20 @@
 # Mutate #
 
-Mutate is a file transcoding CLI application.  It provides a nice command line interface built on top of the [AC Transcoding] library.
+Mutate is a file transcoding CLI application.  It provides a nice command line interface built on top of the [AC Transcoding](http://github.com/AmericanCouncils/Transcoding/) library.
 
 *This app is under heavy development.  It is developed in sync with the Transcoding library.*
 
 ## Installation ##
 
-If you are using the library as a component in another framework or plugin, then there isn't much to set up.  The Mutate code is organized according to [PSR-0](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md) standards, so its namespace (`AC\Mutate`) can be registered however you handle autoloading in your framework of choice.
+Right now the only way to install is via `composer`.  Try these commands:
 
-On the other hand, if you want to use Mutate as a stand-alone application for transcoding files via the command-line, some dependencies are required.  You can easily install these dependencies by running the install script included in `/bin` or manually running [Composer](http://packagist.org/) from the Mutate root.  See below:
-		
-	# go to Mutate root (the directory where this file is located)
-	$> cd /path/to/mutate_root
-	
-	$> php bin/install
+    cd </path/to/mutate_root>
+    php composer.phar install
 
-If that didn't work, try running Composer manually:
-
-	# run ONE of the following:
-	$> wget http://getcomposer.org/composer.phar
-	# OR
-	$> curl -O http://getcomposer.org/composer.phar
-	
-	# run the install
-	$> php composer.phar install
-	
-You can see if the installation worked by running the following:
-
-	php bin/mutate
-	
-If the install worked, you will see a list of available commands.  If not, probably errors. :)
-
-To see which presets/adapters provided with the library are usable on your system, run the following:
-
-	php bin/mutate status
-
-Also, if you want to make usage of the `mutate` command available from anywhere, you can symlink the `bin/mutate` script into anywhere on your include path, such as `/usr/bin`.
+Once the dependencies are installed, you'll need to check the settings `mutate.conf.php` to make sure they work on your system.  Mutate provides wrappers for other programs
+which may need to be installed independently on your system.
 
 ## Basic Standalone Usage ##
-
-The library is meant to be plugged into, and extended by, other libraries and frameworks.  However, it can also be used as is.  In order for all of the default presets and adapters to work, however, your system must have `ffmpeg`, `handbrake`, and `imagemagick` installed.  Their installation won't be covered in this documentation (in the future we'll have documentation about these and other relevant technologies on the github wiki).
 
 To simply transcode a file from one format to another, given a preset, you can use the *mutate* script found in the `/bin` directory.
 
@@ -56,28 +31,10 @@ To simply transcode a file from one format to another, given a preset, you can u
 	
 ## Not-quite-standalone Usage ##
 
-The lines in the example above invoke the stand-alone app, which runs commands that use the Transcoder.  You can use the Transcoder by its self in your own code, which is detailed in the following the sections.  However, you can also use the stand-alone app in your own code if need-be.  When run in the manner described in the next code example, exceptions will not be caught - it's up to your code to handle them properly.
+Mutate provides it's own transcoder, which accepts an array of configuration and automatically loads adapters, presets and jobs depending on that configuration.  You can use this Transcoder in your code in place of the base `AC\Component\Transcoding\Transcoder` if you wish.
 
-```php
-//instantiate it, which will automatically register the presets/adapters/jobs provided with the library
-$app = new \AC\Mutate\Application\Application(array(
-    //include any custom config to pass to the Transcoder here
-));
-	
-//run the command as if it were being run directly from the command line
-$status = $app->runCommand(sprintf("transcode %s %s %s", $inFilePath, $presetName, $outFilePath));
-
-//get the output buffer, which in this case is a simple array of logged messages
-$output = $app->getOutput();
-	
-//your transcoded file
-$file = new \SplFileObject($outFilePath);
-	
-//alternatively, you could get the Transcoder created by the Application directly:
-$transcoder = $app->getTranscoder();
-$transcoder->transcodeWithPreset(/* options */);
-
-//or just build the transcoder yourself (it automatically registers all adapters/presets/jobs included with the ac/transcoding component)
+``` php
+//build the Mutate transcoder yourself (it automatically registers all adapters/presets/jobs included with the ac/transcoding component, depending on the configuration you pass it)
 $transcoder = new AC\Mutate\Transcoder(array(
     //include any custom config for the underlying adapters, or logging, here
 ));
@@ -85,7 +42,7 @@ $transcoder = new AC\Mutate\Transcoder(array(
 
 # Tests #
 
-Tests are written using `[PHPUnit](http://www.phpunit.de/manual/3.6/en/installation.html)`.  To run them, make sure `PHPUnit` is installed, `cd` to this directory, and run the `phpunit` command.  The tests depend on the autoload file generated by `composer` during the install process.  So, if you haven't run the install described towards the beginning, the tests won't run either.  Assuming the tests run, if they don't pass, it's a problem. :)
+You need PHPUnit to run them.
 
 # Todo List #
 

@@ -27,18 +27,20 @@ class Transcoder extends BaseTranscoder
      */
     public function __construct($config = array())
     {
-        //build custom DIC
+        //build custom DIC w/ default config
         $this->container = new Pimple;
-
-        //register adapters/adapters/jobs
-        $this->registerDefaultServices();
-        $this->registerDefaultPresets();
-        $this->registerDefaultJobs();
+        $this->container['transcoder.handbrake.enabled'] = false;
+        $this->container['transcoder.ffmpeg.enabled'] = false;
 
         //register custom configuration last (in order to override defaults)
         foreach ($config as $key => $val) {
             $this->container[$key] = $val;
         }
+
+        //register adapters/adapters/jobs
+        $this->registerDefaultServices();
+        $this->registerDefaultPresets();
+        $this->registerDefaultJobs();
 
         //if logging is enabled register monolog subscriber
         if (isset($this->container['logger'])) {
@@ -53,23 +55,17 @@ class Transcoder extends BaseTranscoder
      */
     protected function registerDefaultServices()
     {
-        //default logger service
-        $this->container['logger'] = $this->container->share(function($c) {
-            $logger = new Logger('mutate');
-            $logger->pushHandler(new StreamHandler($c['log.path'], $c['log.level']));
-            return $logger;
-        });
-
         //demo phptext adapter
         $this->registerAdapterService('php_text', function($c) {
-            return new \AC\Component\Transcoding\Adapters\PhpText;
+            return new \AC\Component\Transcoding\Adapter\PhpText;
         });
 
         //handbrake adapter
-        $this->container['adapter.handbrake'] = $this->container->share(function($c) {
-            return new \AC\Component\Transcoding\Adapters\HandbrakeAdapter($c['handbrake.path']);
-        });
-
+        if ($this->container['transcoder.handbrake.enabled']) {
+            $this->registerAdapterService('handbrake', function($c) {
+                return new \AC\Component\Transcoding\Adapter\HandbrakeAdapter($c['transcoder.handbrake.path']);
+            });
+        }
     }
 
     /**
@@ -79,13 +75,33 @@ class Transcoder extends BaseTranscoder
      */
     protected function registerDefaultPresets()
     {
-        $this->registerPreset(new \AC\Component\Transcoding\Presets\TextToLowerCase());
+        $this->registerPreset(new \AC\Component\Transcoding\Preset\TextToLowerCase());
+        
+        //if handbrake is enabled, register its presets
+        if ($this->container['transcoder.handbrake.enabled']) {
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\AppleTV2Preset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\AppleTVLegacyPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\AppleTVPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\ClassicPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\HighProfilePreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\iPadPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\iPhone4Preset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\iPhoneiPodTouchPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\iPhoneLegacyPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\iPodLegacyPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\iPodPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\NormalPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\UniversalPreset);
+        }
+        
+        //register ffmpeg presets if it's enabled
+        if ($this->container['transcoder.ffmpeg.enabled']) {
+            
+        }
     }
 
     /**
      * Register default jobs
-     *
-     * @return void
      */
     protected function registerDefaultJobs()
     {

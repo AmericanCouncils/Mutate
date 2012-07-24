@@ -7,6 +7,8 @@ use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
 /**
  * Main CLI Aplication class which builds a shared instance of the Transcoder and automatically registers commands, adapters, presets and jobs provided with the library.
@@ -16,6 +18,8 @@ class Application extends BaseApplication
     const VERSION = '0.8.0';
 
     private $transcoder = false;
+    
+    private $container;
     
     /**
      * Construct app, build the Transcoder, register error handler.
@@ -27,9 +31,25 @@ class Application extends BaseApplication
         set_error_handler(array($this, 'handleError'));
         
         parent::__construct("Mutate File Transcoder", self::VERSION);
+        
+        //build internal dic for logger
+        $defaults = array(
+            'mutate.log.enabled' => false,
+            'mutate.log.path' => '',
+            'mutate.log.level' => Logger::ERROR
+        );
 
+        $this->config = array_merge($defaults, $config);
+        
         //build transcoder
         $this->transcoder = new Transcoder($config);
+                
+        //register log subscriber, if logging is enabled
+        if ($this->container['mutate.log.enabled']) {
+            $logger = new Logger('mutate');
+            $logger->pushHandler(new StreamHandler($this->config['mutate.log.path'], $this->config['mutate.log.level']));
+            $this->transcoder->addSubscriber(new TranscodeLogSubscriber($logger));
+        }
 
     }
 
