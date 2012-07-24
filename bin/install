@@ -1,15 +1,8 @@
 #!/usr/bin/env php
 <?php
 
-//chdir to root
-$root = __DIR__."/..";
-chdir($root);
+//TODO: this script should globally "install" mutate on the system by doing the following:
 
-//exit if already installed
-if(file_exists($root."/composer.lock") && !in_array('--reinstall', $argv)) {
-	exit(PHP_EOL.PHP_EOL."Mutate seems to be already installed.  Use the '--reinstall' option to force reinstall, or run the commands manually described in README.md in the library root.".PHP_EOL.PHP_EOL);
-}
-
-//run the install
-passthru("curl -O http://getcomposer.org/composer.phar");
-passthru("php composer.phar install");
+//run compile command, move to default global location (/usr/bin) (or accept override path in cli)
+//copy mutate.conf.php to global location (/etc/mutate.conf.php) (or accept override path in cli)
+//print out status
