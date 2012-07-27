@@ -20,7 +20,8 @@
         "symfony/finder": "dev-master",
         "symfony/class-loader": "dev-master",
         "pimple/pimple": "dev-master",
-        "monolog/monolog": "dev-master"
+        "monolog/monolog": "dev-master",
+        "symfony/process": "dev-master"
     },
     "autoload": {
         "psr-0": { "AC\\Mutate": "src/" }

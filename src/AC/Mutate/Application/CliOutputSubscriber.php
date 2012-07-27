@@ -5,9 +5,9 @@ use AC\Component\Transcoding\File;
 use AC\Component\Transcoding\Event\MessageEvent;
 use AC\Component\Transcoding\Event\TranscodeEvent;
 use AC\Component\Transcoding\Event\TranscodeEvents;
-use \Symfony\Component\Console\Output\Output;
-use \Symfony\Component\Console\Helper\HelperSet;
-use \Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Console\Output\Output;
+use Symfony\Component\Console\Helper\HelperSet;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * This listener is created by the Application and registered with the Transcoder just before running a command.  This provides an easy way to get output
@@ -22,10 +22,10 @@ class CliOutputSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return array(
+            TranscodeEvents::MESSAGE => 'onMessage',
             TranscodeEvents::BEFORE => 'onTranscodeStart',
             TranscodeEvents::AFTER => 'onTranscodeComplete',
             TranscodeEvents::ERROR => 'onTranscodeFailure',
-            TranscodeEvents::MESSAGE => 'onMessage'
         );
     }
     
@@ -39,7 +39,24 @@ class CliOutputSubscriber implements EventSubscriberInterface
         $level = $e->getLevel();
         $message = $e->getMessage();
         
-        $msg = $formatter->formatBlock(sprintf("Adapter %s %s: %s", $adapterKey, $level, $message), 'comment');
+        $match = '/\r\n?/';
+        
+        //check if the message has weird formatting before trying to format it (currently a hack to avoid segmentation faults)
+        if (!preg_match($match, $message)) {
+            $msg = sprintf(
+                "%s (%s): %s",
+                $formatter->formatBlock($adapterKey, 'info'),
+                $formatter->formatBlock($level, 'comment'),
+                $message
+            );
+        } else {
+            $msg = sprintf(
+                "%s (%s): %s",
+                $adapterKey,
+                $level,
+                preg_replace('/\r\n?/', '', $message)
+            );
+        }
         
         $this->getOutput()->writeln($msg);
     }
@@ -56,7 +73,8 @@ class CliOutputSubscriber implements EventSubscriberInterface
         $msg = sprintf(
             "Starting transcode of file %s with preset %s ...",
             $formatter->formatBlock($inpath, 'info'),
-            $formatter->formatBlock($presetKey, 'info'));
+            $formatter->formatBlock($presetKey, 'info')
+        );
 
         $this->getOutput()->writeln($msg);
         $this->startTime = microtime(true);
@@ -72,8 +90,8 @@ class CliOutputSubscriber implements EventSubscriberInterface
         $totalTime = microtime(true) - $this->startTime;
         $formatter = $this->getFormatter();
         $msg = sprintf(
-            "Transcode completed in %s ms.",
-            $formatter->formatBlock(($totalTime * 1000), 'info')
+            "Transcode completed in %s seconds.",
+            $formatter->formatBlock(round($totalTime, 4), 'info')
         );
         $this->getOutput()->writeln($msg);
 

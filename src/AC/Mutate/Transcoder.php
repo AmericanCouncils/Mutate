@@ -42,10 +42,6 @@ class Transcoder extends BaseTranscoder
         $this->registerDefaultPresets();
         $this->registerDefaultJobs();
 
-        //if logging is enabled register monolog subscriber
-        if (isset($this->container['logger'])) {
-            $this->addSubscriber(new TranscodeLogSubscriber($this->container));
-        }
     }
 
     /**
@@ -63,7 +59,7 @@ class Transcoder extends BaseTranscoder
         //handbrake adapter
         if ($this->container['transcoder.handbrake.enabled']) {
             $this->registerAdapterService('handbrake', function($c) {
-                return new \AC\Component\Transcoding\Adapter\HandbrakeAdapter($c['transcoder.handbrake.path']);
+                return new \AC\Component\Transcoding\Adapter\HandbrakeAdapter($c['transcoder.handbrake.path'], $c['transcoder.handbrake.timeout']);
             });
         }
     }

@@ -5,7 +5,8 @@ return array(
     'mutate.log.path' => __DIR__.'/logs/mutate.log',
     'mutate.log.level' => Monolog\Logger::INFO,
     'transcoder.handbrake.enabled' => true,
-    'transcoder.handbrake.path' => "/usr/local/bin/HandBrakeCLI",
+    'transcoder.handbrake.path' => "/usr/bin/HandBrakeCLI",
+    'transcoder.handbrake.timeout' => null,
     'transcoder.ffmpeg.enabled' => false,
     'transcoder.ffmpeg.path' => ""
 );
