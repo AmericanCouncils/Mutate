@@ -3,9 +3,9 @@
 namespace AC\Mutate\Application;
 
 use AC\Mutate\Transcoder;
+use AC\Mutate\TranscodeLogSubscriber;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
@@ -18,9 +18,7 @@ class Application extends BaseApplication
     const VERSION = '0.8.0';
 
     private $transcoder = false;
-    
-    private $container;
-    
+
     /**
      * Construct app, build the Transcoder, register error handler.
      *
@@ -29,23 +27,23 @@ class Application extends BaseApplication
     public function __construct($config = array())
     {
         set_error_handler(array($this, 'handleError'));
-        
+
         parent::__construct("Mutate File Transcoder", self::VERSION);
-        
-        //build internal dic for logger
+
+        //set default internal config
         $defaults = array(
             'mutate.log.enabled' => false,
-            'mutate.log.path' => '',
+            'mutate.log.path' => '/var/log/mutate.log',
             'mutate.log.level' => Logger::ERROR
         );
 
         $this->config = array_merge($defaults, $config);
-        
+
         //build transcoder
         $this->transcoder = new Transcoder($config);
-                
+
         //register log subscriber, if logging is enabled
-        if ($this->container['mutate.log.enabled']) {
+        if ($this->config['mutate.log.enabled']) {
             $logger = new Logger('mutate');
             $logger->pushHandler(new StreamHandler($this->config['mutate.log.path'], $this->config['mutate.log.level']));
             $this->transcoder->addSubscriber(new TranscodeLogSubscriber($logger));
@@ -56,10 +54,10 @@ class Application extends BaseApplication
     /**
      * Convert PHP errors to exceptions for consistency
      *
-     * @param string $no 
-     * @param string $str 
-     * @param string $file 
-     * @param string $line 
+     * @param  string         $no
+     * @param  string         $str
+     * @param  string         $file
+     * @param  string         $line
      * @return void
      * @throws ErrorException
      */
@@ -149,7 +147,7 @@ class Application extends BaseApplication
     {
         $this->transcoder = $t;
     }
-    
+
     /**
      * Returns the long version of the application.
      *

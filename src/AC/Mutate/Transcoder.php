@@ -5,7 +5,6 @@ namespace AC\Mutate;
 use AC\Component\Transcoding\Transcoder as BaseTranscoder;
 use Pimple;
 use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
 /**
  * The Transcoder internally has a dependency injection container for loading adapters, and a logger for events.
  *
@@ -15,7 +14,7 @@ use Monolog\Handler\StreamHandler;
 class Transcoder extends BaseTranscoder
 {
     protected $container;
-    
+
     protected $adapterServices = array();
 
     /**
@@ -41,11 +40,6 @@ class Transcoder extends BaseTranscoder
         $this->registerDefaultServices();
         $this->registerDefaultPresets();
         $this->registerDefaultJobs();
-
-        //if logging is enabled register monolog subscriber
-        if (isset($this->container['logger'])) {
-            $this->addSubscriber(new TranscodeLogSubscriber($this->container));
-        }
     }
 
     /**
@@ -63,7 +57,14 @@ class Transcoder extends BaseTranscoder
         //handbrake adapter
         if ($this->container['transcoder.handbrake.enabled']) {
             $this->registerAdapterService('handbrake', function($c) {
-                return new \AC\Component\Transcoding\Adapter\HandbrakeAdapter($c['transcoder.handbrake.path']);
+                return new \AC\Component\Transcoding\Adapter\HandbrakeAdapter($c['transcoder.handbrake.path'], $c['transcoder.handbrake.timeout']);
+            });
+        }
+
+        //ffmpeg adapter
+        if ($this->container['transcoder.ffmpeg.enabled']) {
+            $this->registerAdapterService('ffmpeg', function($c) {
+                return new \AC\Component\Transcoding\Adapter\FFmpegAdapter($c['transcoder.ffmpeg.path'], $c['transcoder.ffmpeg.timeout']);
             });
         }
     }
@@ -76,7 +77,7 @@ class Transcoder extends BaseTranscoder
     protected function registerDefaultPresets()
     {
         $this->registerPreset(new \AC\Component\Transcoding\Preset\TextToLowerCase());
-        
+
         //if handbrake is enabled, register its presets
         if ($this->container['transcoder.handbrake.enabled']) {
             $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\AppleTV2Preset);
@@ -93,10 +94,19 @@ class Transcoder extends BaseTranscoder
             $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\NormalPreset);
             $this->registerPreset(new \AC\Component\Transcoding\Preset\Handbrake\UniversalPreset);
         }
-        
+
         //register ffmpeg presets if it's enabled
         if ($this->container['transcoder.ffmpeg.enabled']) {
-            
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\FFmpeg\AudioCompression32kPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\FFmpeg\AudioCompression96kPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\FFmpeg\AudioCompression128kPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\FFmpeg\AudioCompression160kPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\FFmpeg\AudioCompression192kPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\FFmpeg\AudioCompression256kPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\FFmpeg\AudioCompression320kPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\FFmpeg\AviToAnimatedGifPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\FFmpeg\ConvertNonMVideoPreset);
+            $this->registerPreset(new \AC\Component\Transcoding\Preset\FFmpeg\SoundFromVideoPreset);
         }
     }
 
