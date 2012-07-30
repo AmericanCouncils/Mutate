@@ -1,16 +1,21 @@
 {
-    "hash": "4c9961e5c02d5efd97eb4171daa022f8",
+    "hash": "7a9a0d60cf788979093643ab74d7bc47",
     "packages": [
         {
             "package": "ac/transcoding",
             "version": "dev-master",
-            "source-reference": "40c07b47066a2104f332d90eba9641b8fd0ec88d"
+            "source-reference": "91891630ce61b057e4f4396fef41ceb240df1190",
+            "commit-date": "1343675065"
         },
         {
             "package": "monolog/monolog",
+            "version": "1.1.0"
+        },
+        {
+            "package": "pimple/pimple",
             "version": "dev-master",
-            "source-reference": "59fb9f41be22b246f5e5d3bd8a012ed77f44a7d0",
-            "commit-date": "1342167011"
+            "alias-pretty-version": "1.0.x-dev",
+            "alias-version": "1.0.9999999.9999999-dev"
         },
         {
             "package": "pimple/pimple",
@@ -21,14 +26,26 @@
         {
             "package": "symfony/class-loader",
             "version": "dev-master",
+            "alias-pretty-version": "2.1.x-dev",
+            "alias-version": "2.1.9999999.9999999-dev"
+        },
+        {
+            "package": "symfony/class-loader",
+            "version": "dev-master",
             "source-reference": "v2.1.0-BETA4",
             "commit-date": "1342347231"
         },
         {
             "package": "symfony/console",
             "version": "dev-master",
-            "source-reference": "v2.1.0-BETA4",
-            "commit-date": "1342347231"
+            "alias-pretty-version": "2.1.x-dev",
+            "alias-version": "2.1.9999999.9999999-dev"
+        },
+        {
+            "package": "symfony/console",
+            "version": "dev-master",
+            "source-reference": "7c328a9752ac035fe38dfae5425cf66b905c5394",
+            "commit-date": "1343512949"
         },
         {
             "package": "symfony/event-dispatcher",
@@ -45,8 +62,14 @@
         {
             "package": "symfony/finder",
             "version": "dev-master",
-            "source-reference": "v2.1.0-BETA4",
-            "commit-date": "1342778082"
+            "alias-pretty-version": "2.1.x-dev",
+            "alias-version": "2.1.9999999.9999999-dev"
+        },
+        {
+            "package": "symfony/finder",
+            "version": "dev-master",
+            "source-reference": "7fe9695cb1dae09df7f545aabed8fa4b0026108b",
+            "commit-date": "1343512949"
         },
         {
             "package": "symfony/process",
@@ -57,8 +80,8 @@
         {
             "package": "symfony/process",
             "version": "dev-master",
-            "source-reference": "v2.1.0-BETA4",
-            "commit-date": "1342632812"
+            "source-reference": "7278cfeeb168654bcd148127796cfcd504a30dbe",
+            "commit-date": "1343512949"
         }
     ],
     "packages-dev": null,
@@ -68,12 +91,6 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "ac/transcoding": 20,
-        "symfony/console": 20,
-        "symfony/event-dispatcher": 20,
-        "symfony/finder": 20,
-        "symfony/class-loader": 20,
-        "pimple/pimple": 20,
-        "monolog/monolog": 20,
-        "symfony/process": 20
+        "pimple/pimple": 20
     }
 }

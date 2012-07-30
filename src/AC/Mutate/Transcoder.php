@@ -40,7 +40,6 @@ class Transcoder extends BaseTranscoder
         $this->registerDefaultServices();
         $this->registerDefaultPresets();
         $this->registerDefaultJobs();
-
     }
 
     /**
