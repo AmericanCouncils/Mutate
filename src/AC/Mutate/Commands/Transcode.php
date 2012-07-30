@@ -9,6 +9,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\Output;
 use AC\Mutate\Transcoder;
 use AC\Component\Transcoding\File;
+use AC\Component\Transcoding\Adapter\AbstractCliAdapter;
 
 class Transcode extends Command
 {
@@ -31,7 +32,7 @@ class Transcode extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $inFile = new File($input->getArgument('inFile'));
-        $presetName = $input->getArgument('preset_key');
+        $presetKey = $input->getArgument('preset_key');
         $outputPath = $input->getArgument('outFile');
 
         //figure out conflict mode
@@ -46,8 +47,19 @@ class Transcode extends Command
         //figure out fail mode
         $failMode = ($input->getOption('preserve')) ? Transcoder::ONFAIL_PRESERVE : Transcoder::ONFAIL_DELETE;
 
+        $transcoder = $this->getTranscoder();
+
+        //check for verbose mode
+        if ($input->getOption('verbose')) {
+            $adapterKey = $transcoder->getPreset($presetKey)->getRequiredAdapter();
+            $adapter = $transcoder->getAdapter($adapterKey);
+            if ($adapter instanceof AbstractCliAdapter) {
+                $adapter->setStreamBuffer();
+            }
+        }
+
         //run the transcode
-        $newFile = $this->getTranscoder()->transcodeWithPreset($inFile, $presetName, $outputPath, $conflictMode, $dirMode, $failMode);
+        $newFile = $transcoder->transcodeWithPreset($inFile, $presetKey, $outputPath, $conflictMode, $dirMode, $failMode);
 
         return true;
     }

@@ -28,7 +28,7 @@ class CliOutputSubscriber implements EventSubscriberInterface
             TranscodeEvents::ERROR => 'onTranscodeFailure',
         );
     }
-    
+
     /**
      * Write any messages received by an adapter
      */
@@ -38,9 +38,9 @@ class CliOutputSubscriber implements EventSubscriberInterface
         $adapterKey = $e->getAdapter()->getKey();
         $level = $e->getLevel();
         $message = $e->getMessage();
-        
+
         $match = '/\r\n?/';
-        
+
         //check if the message has weird formatting before trying to format it (currently a hack to avoid segmentation faults)
         if (!preg_match($match, $message)) {
             $msg = sprintf(
@@ -57,7 +57,7 @@ class CliOutputSubscriber implements EventSubscriberInterface
                 preg_replace('/\r\n?/', '', $message)
             );
         }
-        
+
         $this->getOutput()->writeln($msg);
     }
 

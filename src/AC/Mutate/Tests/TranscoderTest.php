@@ -7,13 +7,13 @@ use AC\Component\Transcoding\Adapter;
 
 class TranscoderTest extends \PHPUnit_Framework_TestCase
 {
-	public function testInstantiate()
+    public function testInstantiate()
     {
         $t = new Transcoder;
         $this->assertNotNull($t);
         $this->assertTrue($t instanceof Transcoder);
     }
-    
+
     public function testGetPhpTextAdapter()
     {
         $t = new Transcoder;
