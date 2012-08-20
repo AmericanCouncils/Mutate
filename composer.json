@@ -14,7 +14,7 @@
     "minimum-stability": "dev",
     "require": {
         "php": ">=5.3.2",
-        "ac/transcoding": "dev-master",
+        "ac/transcoding": "0.2.*",
         "symfony/console": "2.1.*",
         "symfony/event-dispatcher": "2.1.*",
         "symfony/finder": "2.1.*",
