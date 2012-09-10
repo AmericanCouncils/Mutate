@@ -16,6 +16,12 @@ which may need to be installed independently on your system.
 
 ## Basic Standalone Usage ##
 
+Try `mutate list` to see a list of all available commands.
+
+To see what available adapters (and presets for those adapters) you have, run:
+
+	$> php bin/mutate status
+
 To simply transcode a file from one format to another, given a preset, you can use the *mutate* script found in the `/bin` directory.
 
 	$> cd /path/to/mutate_root
